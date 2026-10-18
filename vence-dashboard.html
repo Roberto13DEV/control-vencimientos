@@ -1,0 +1,357 @@
+<title>VENCE+ Dashboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: navy rail + work area; summary (KPIs) → 30-day expiry runway → FEFO list & state split → expired + actions */
+:root{
+  --bg:#F2F5F6; --surface:#FFFFFF; --sunken:#F7F9FA; --fg:#132029; --muted:#5D6E79; --line:#E1E7EA;
+  --rail:#0F1E2B; --rail-fg:#C9D5DD; --rail-hi:#FFFFFF;
+  --accent:#0C9C7C; --accent-soft:#E2F4EF; --accent-fg:#FFFFFF;
+  --ok:#1E9A5E; --ok-soft:#E3F4EA;
+  --warn:#C97E04; --warn-soft:#FCF1DC;
+  --crit:#D43B3B; --crit-soft:#FBE6E6;
+  --info:#2F6FD0; --info-soft:#E5EEFB;
+  --f-display:"Sora",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Figtree",ui-sans-serif,system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --r:12px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B141B; --surface:#121D26; --sunken:#0F1920; --fg:#E4ECF0; --muted:#8C9EA9; --line:#21303B;
+  --rail:#08111A; --rail-fg:#9DB0BC; --rail-hi:#FFFFFF;
+  --accent:#2BC29E; --accent-soft:#123A33; --accent-fg:#06221B;
+  --ok:#3CC481; --ok-soft:#143325; --warn:#F0A830; --warn-soft:#3A2C12; --crit:#F06A6A; --crit-soft:#3D1C1E;
+  --info:#6FA2F0; --info-soft:#17283F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B141B; --surface:#121D26; --sunken:#0F1920; --fg:#E4ECF0; --muted:#8C9EA9; --line:#21303B;
+  --rail:#08111A; --rail-fg:#9DB0BC; --rail-hi:#FFFFFF;
+  --accent:#2BC29E; --accent-soft:#123A33; --accent-fg:#06221B;
+  --ok:#3CC481; --ok-soft:#143325; --warn:#F0A830; --warn-soft:#3A2C12; --crit:#F06A6A; --crit-soft:#3D1C1E;
+  --info:#6FA2F0; --info-soft:#17283F; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--f-body)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{display:grid;grid-template-columns:240px 1fr;min-height:100%}
+
+/* rail */
+.rail{background:var(--rail);color:var(--rail-fg);display:flex;flex-direction:column;gap:28px;padding:28px 16px;position:sticky;top:0;height:100vh}
+.brand{padding:0 10px}
+.brand b{font:700 24px/1 var(--f-display);color:var(--rail-hi);letter-spacing:-.02em}
+.brand b span{color:var(--accent)}
+.brand small{display:block;margin-top:6px;font:500 10px/1 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;color:var(--rail-fg);opacity:.7}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav button{display:flex;align-items:center;gap:12px;background:none;border:0;color:var(--rail-fg);padding:10px 12px;border-radius:9px;text-align:left;font-weight:500;white-space:nowrap}
+.nav button:hover{background:rgba(255,255,255,.06);color:var(--rail-hi)}
+.nav button[aria-current="page"]{background:rgba(43,194,158,.14);color:var(--rail-hi);box-shadow:inset 3px 0 0 var(--accent)}
+.nav svg{width:18px;height:18px;flex:none}
+.nav .count{margin-left:auto;font:500 11px/1 var(--f-mono);background:var(--crit);color:#fff;padding:3px 6px;border-radius:20px}
+.rail-foot{margin-top:auto;display:flex;flex-direction:column;gap:12px}
+.user{display:flex;gap:10px;align-items:center;padding:10px;border-radius:10px;background:rgba(255,255,255,.04)}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font:600 13px var(--f-display);flex:none}
+.user b{display:block;color:var(--rail-hi);font-size:14px}
+.user small{font-size:12px}
+.logout{background:none;border:1px solid rgba(255,255,255,.12);color:var(--rail-fg);border-radius:9px;padding:9px;font-size:14px}
+.logout:hover{color:var(--rail-hi);border-color:rgba(255,255,255,.3)}
+
+/* main */
+main{min-width:0;padding-block:24px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1320px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+@media(min-width:900px){main{padding-left:32px;padding-right:max(32px,env(safe-area-inset-right,0px))}}
+
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.eyebrow{font:500 11px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{font:700 28px/1.15 var(--f-display);letter-spacing:-.02em;margin:8px 0 0;text-wrap:balance}
+.top p{margin:4px 0 0;color:var(--muted)}
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:0 12px;height:42px;min-width:0;flex:1 1 220px}
+.search input{border:0;background:none;outline:none;color:var(--fg);font:inherit;width:100%;min-width:0}
+.search svg{width:16px;color:var(--muted);flex:none}
+.btn{height:42px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:600;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn.primary:hover{filter:brightness(1.06)}
+.btn svg{width:16px;height:16px}
+.sample{font:500 11px/1 var(--f-mono);color:var(--info);background:var(--info-soft);padding:5px 8px;border-radius:6px;letter-spacing:.04em}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px 16px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;text-align:left}
+.kpi:hover{border-color:var(--muted)}
+.kpi::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--tone)}
+.kpi-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.kpi-label{font-size:13px;font-weight:600;color:var(--muted)}
+.kpi-ico{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;background:var(--tone-soft);color:var(--tone)}
+.kpi-ico svg{width:17px;height:17px}
+.kpi-val{font:700 34px/1 var(--f-display);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.kpi-sub{font-size:13px;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.kpi-sub a{color:var(--tone);font-weight:600;text-decoration:none}
+.t-info{--tone:var(--info);--tone-soft:var(--info-soft)}
+.t-warn{--tone:var(--warn);--tone-soft:var(--warn-soft)}
+.t-crit{--tone:var(--crit);--tone-soft:var(--crit-soft)}
+.t-ok{--tone:var(--ok);--tone-soft:var(--ok-soft)}
+
+/* panels */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;min-width:0;display:flex;flex-direction:column;gap:16px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.panel h2{font:600 17px/1.3 var(--f-display);margin:0;letter-spacing:-.01em}
+.panel-head p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+.link{background:none;border:0;color:var(--accent);font-weight:600;font-size:14px;padding:4px 0}
+.link:hover{text-decoration:underline}
+
+/* runway */
+.runway{display:grid;grid-template-columns:repeat(31,minmax(0,1fr));align-items:end;gap:3px;height:120px;padding-top:8px;border-bottom:1px solid var(--line)}
+.day{display:flex;flex-direction:column;justify-content:flex-end;height:100%;position:relative}
+.day i{display:block;border-radius:3px 3px 0 0;background:var(--c);min-height:2px;opacity:.9}
+.day.empty i{background:var(--line)}
+.day:hover i{opacity:1;outline:2px solid var(--c);outline-offset:1px}
+.day .tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);font-size:12px;padding:6px 8px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;z-index:2}
+.day:hover .tip{opacity:1}
+.day.l .tip{left:0;transform:none}.day.r .tip{left:auto;right:0;transform:none}
+.runway-axis{display:grid;grid-template-columns:repeat(31,minmax(0,1fr));gap:3px;font:400 10px/1 var(--f-mono);color:var(--muted)}
+.runway-axis span{text-align:center;white-space:nowrap}
+.zones{display:flex;flex-wrap:wrap;gap:16px;font-size:13px;color:var(--muted)}
+.zones span{display:inline-flex;align-items:center;gap:6px}
+.zones i{width:10px;height:10px;border-radius:3px;background:var(--c)}
+
+/* grids */
+.grid-2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px}
+.grid-2b{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px}
+
+/* tables */
+.tbl-wrap{overflow-x:auto;margin:0 -20px;padding:0 20px}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:560px}
+th{text-align:left;font:500 11px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 10px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:var(--sunken)}
+th:first-child,td:first-child{padding-left:0}
+.prod b{display:block;font-weight:600}
+.prod small{color:var(--muted);font:400 12px var(--f-mono)}
+.mono{font-family:var(--f-mono);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 9px;border-radius:20px;background:var(--tone-soft);color:var(--tone);white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.days{font:600 13px var(--f-mono);color:var(--tone);white-space:nowrap}
+.bar{height:6px;border-radius:4px;background:var(--line);width:80px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--tone);border-radius:4px}
+.row-act{background:none;border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:13px;font-weight:600;white-space:nowrap}
+.row-act:hover{border-color:var(--crit);color:var(--crit)}
+.fefo{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.fefo b{font-family:var(--f-mono);color:var(--fg);font-weight:500}
+
+/* state split */
+.split{display:flex;height:14px;border-radius:7px;overflow:hidden;gap:2px}
+.split i{background:var(--c)}
+.legend{display:flex;flex-direction:column;gap:2px}
+.legend div{display:grid;grid-template-columns:12px 1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.legend div:last-child{border-bottom:0}
+.legend i{width:10px;height:10px;border-radius:3px;background:var(--c)}
+.legend b{font:600 15px var(--f-display);font-variant-numeric:tabular-nums}
+.legend small{color:var(--muted);font:400 12px var(--f-mono);width:44px;text-align:right}
+.big-total{display:flex;align-items:baseline;gap:8px}
+.big-total b{font:700 30px/1 var(--f-display);letter-spacing:-.03em}
+.big-total span{color:var(--muted);font-size:14px}
+
+/* actions */
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.action{display:flex;gap:12px;align-items:center;text-align:left;background:var(--sunken);border:1px solid var(--line);border-radius:10px;padding:14px}
+.action:hover{border-color:var(--accent);background:var(--accent-soft)}
+.action .kpi-ico{flex:none}
+.action b{display:block;font-size:14px}
+.action small{color:var(--muted);font-size:12px}
+
+footer{text-align:center;font-size:12px;color:var(--muted);padding-top:8px}
+
+@media(max-width:1100px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .grid-2,.grid-2b{grid-template-columns:1fr}
+}
+@media(max-width:820px){
+  .app{grid-template-columns:1fr}
+  .rail{position:sticky;top:0;height:auto;flex-direction:row;align-items:center;gap:16px;padding:12px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));padding-top:calc(12px + env(safe-area-inset-top,0px));z-index:5;overflow-x:auto}
+  .brand small,.rail-foot{display:none}
+  .brand b{font-size:20px}
+  .nav{flex-direction:row}
+  .nav button{padding:8px 10px}
+  .runway-axis span:nth-child(odd){visibility:hidden}
+}
+@media(max-width:520px){
+  .kpis{grid-template-columns:1fr 1fr;gap:10px}
+  .kpi{padding:14px}
+  .kpi-val{font-size:28px}
+  .kpi-sub a{display:none}
+  .actions{grid-template-columns:1fr}
+  h1{font-size:24px}
+  .runway{height:90px;gap:2px}
+  .runway-axis{gap:2px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+  <aside class="rail">
+    <div class="brand"><b>VENCE<span>+</span></b><small>Control inteligente</small></div>
+    <nav class="nav" aria-label="Principal">
+      <button aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Resumen</button>
+      <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>Productos</button>
+      <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>Alertas<span class="count" id="navAlerts">0</span></button>
+      <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-7 7-7s7 3 7 7M17 4a4 4 0 0 1 0 8M22 21c0-3-1.5-5.5-4-6.5"/></svg>Usuarios</button>
+      <button><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg>Historial</button>
+    </nav>
+    <div class="rail-foot">
+      <div class="user"><div class="avatar">AD</div><div><b>admin</b><small>Administrador</small></div></div>
+      <button class="logout">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main>
+    <div class="wrap">
+      <header class="top">
+        <div>
+          <div class="eyebrow">Control de vencimientos · <span id="today"></span></div>
+          <h1>Buenos días, admin</h1>
+          <p id="headline">Revisa lo que vence esta semana.</p>
+        </div>
+        <div class="tools">
+          <label class="search" for="q"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" placeholder="Buscar producto o lote…"></label>
+          <button class="btn primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>Nuevo producto</button>
+        </div>
+      </header>
+
+      <section class="kpis" aria-label="Resumen">
+        <button class="kpi t-info"><div class="kpi-head"><span class="kpi-label">Productos registrados</span><span class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></span></div><div class="kpi-val" id="kTotal">0</div><div class="kpi-sub"><span id="kTotalSub"></span><a>Ver →</a></div></button>
+        <button class="kpi t-warn"><div class="kpi-head"><span class="kpi-label">Próximos a vencer</span><span class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg></span></div><div class="kpi-val" id="kSoon">0</div><div class="kpi-sub"><span>en 15 días o menos</span><a>Ver →</a></div></button>
+        <button class="kpi t-crit"><div class="kpi-head"><span class="kpi-label">Vencidos</span><span class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg></span></div><div class="kpi-val" id="kExp">0</div><div class="kpi-sub"><span>pendientes de baja</span><a>Ver →</a></div></button>
+        <button class="kpi t-ok"><div class="kpi-head"><span class="kpi-label">Unidades en stock</span><span class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16v13H4zM8 7V4h8v3"/></svg></span></div><div class="kpi-val" id="kUnits">0</div><div class="kpi-sub"><span id="kUnitsSub"></span><a>Ver →</a></div></button>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div><h2>Calendario de vencimientos · próximos 30 días</h2><p>Unidades que vencen cada día. Pasa el cursor por una barra para ver el detalle.</p></div>
+          <span class="sample">DATOS DE EJEMPLO</span>
+        </div>
+        <div>
+          <div class="runway" id="runway"></div>
+          <div class="runway-axis" id="axis"></div>
+        </div>
+        <div class="zones">
+          <span style="--c:var(--crit)"><i></i>Crítico · 0–3 días</span>
+          <span style="--c:var(--warn)"><i></i>Próximo · 4–15 días</span>
+          <span style="--c:var(--ok)"><i></i>En buen estado · +15 días</span>
+        </div>
+      </section>
+
+      <div class="grid-2">
+        <section class="panel">
+          <div class="panel-head">
+            <div><h2>Próximos a vencer</h2><p class="fefo">Orden FEFO: lo primero que vence, sale primero.</p></div>
+            <button class="link">Ver todos →</button>
+          </div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Producto</th><th>Vence</th><th>Restan</th><th class="num">Stock</th><th>Estado</th></tr></thead>
+            <tbody id="soonBody"></tbody>
+          </table></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><div><h2>Estado del inventario</h2><p>Por unidades en stock</p></div></div>
+          <div class="big-total"><b id="splitTotal">0</b><span>unidades</span></div>
+          <div class="split" id="split"></div>
+          <div class="legend" id="legend"></div>
+        </section>
+      </div>
+
+      <div class="grid-2b">
+        <section class="panel">
+          <div class="panel-head">
+            <div><h2>Productos vencidos</h2><p>Retíralos de la venta y regístralos como merma.</p></div>
+            <button class="link" style="color:var(--crit)">Ver todos →</button>
+          </div>
+          <div class="tbl-wrap"><table>
+            <thead><tr><th>Producto</th><th>Venció</th><th>Hace</th><th class="num">Unid.</th><th></th></tr></thead>
+            <tbody id="expBody"></tbody>
+          </table></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h2>Acciones rápidas</h2></div>
+          <div class="actions">
+            <button class="action t-ok"><span class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg></span><span><b>Nuevo producto</b><small>Registrar lote</small></span></button>
+            <button class="action t-info"><span class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-7 7-7s7 3 7 7M19 8v6M16 11h6"/></svg></span><span><b>Nuevo usuario</b><small>Dar acceso</small></span></button>
+            <button class="action t-warn"><span class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg></span><span><b>Historial</b><small>Ver movimientos</small></span></button>
+            <button class="action t-crit"><span class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2zM9 17h6M9 13h6"/></svg></span><span><b>Exportar reporte</b><small>Inventario en Excel</small></span></button>
+          </div>
+        </section>
+      </div>
+
+      <footer>© 2026 Control de Vencimientos · VENCE+</footer>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  // Example inventory: d = days until expiry (negative = expired)
+  const items=[
+    ["Leche entera 1 L","L-24871","Lácteos",2,36],["Yogur natural 500 g","L-31022","Lácteos",1,18],
+    ["Jamón cocido 200 g","L-11930","Embutidos",3,12],["Pan de molde integral","L-77215","Panadería",5,22],
+    ["Queso fresco 400 g","L-40518","Lácteos",7,9],["Huevos docena","L-60234","Frescos",9,30],
+    ["Mantequilla 250 g","L-52190","Lácteos",12,15],["Salsa de tomate 400 g","L-88412","Despensa",14,40],
+    ["Galletas avena","L-90031","Despensa",19,48],["Atún en lata 160 g","L-12007","Conservas",24,60],
+    ["Cereal maíz 500 g","L-33410","Despensa",27,25],["Zumo naranja 1 L","L-45001","Bebidas",21,34],
+    ["Arroz 1 kg","L-70112","Despensa",28,80],["Agua 1,5 L","L-10020","Bebidas",17,96],
+    ["Crema de leche","L-20419","Lácteos",-2,6],["Pollo marinado","L-55120","Frescos",-1,4],["Pan baguette","L-77001","Panadería",-4,8]
+  ];
+  const today=new Date(); today.setHours(0,0,0,0);
+  const fmt=new Intl.DateTimeFormat("es",{day:"2-digit",month:"short"});
+  const add=n=>{const x=new Date(today);x.setDate(x.getDate()+n);return x};
+  const tone=d=>d<0?"crit":d<=3?"crit":d<=15?"warn":"ok";
+  const label=d=>d<0?"Vencido":d<=3?"Crítico":d<=15?"Próximo":"En buen estado";
+  const $=id=>document.getElementById(id);
+  const sum=a=>a.reduce((s,x)=>s+x[4],0);
+
+  $("today").textContent=new Intl.DateTimeFormat("es",{weekday:"long",day:"numeric",month:"long"}).format(today);
+  const exp=items.filter(x=>x[3]<0), soon=items.filter(x=>x[3]>=0&&x[3]<=15), ok=items.filter(x=>x[3]>15);
+  const units=sum(items);
+  $("kTotal").textContent=items.length; $("kTotalSub").textContent=new Set(items.map(x=>x[2])).size+" categorías";
+  $("kSoon").textContent=soon.length; $("kExp").textContent=exp.length; $("navAlerts").textContent=exp.length+soon.filter(x=>x[3]<=3).length;
+  $("kUnits").textContent=units.toLocaleString("es"); $("kUnitsSub").textContent=sum(soon)+" en riesgo";
+  const week=items.filter(x=>x[3]>=0&&x[3]<=7).length;
+  $("headline").textContent=`${week} productos vencen esta semana y ${exp.length} ya vencieron.`;
+
+  // runway
+  const per=Array.from({length:31},()=>[]); items.forEach(x=>{if(x[3]>=0&&x[3]<=30)per[x[3]].push(x)});
+  const max=Math.max(...per.map(sum),1);
+  $("runway").innerHTML=per.map((p,i)=>{const u=sum(p),h=u?Math.max(6,u/max*100):2;
+    const tip=u?`${fmt.format(add(i))} · ${u} u.<br>${p.map(x=>x[0]).join("<br>")}`:`${fmt.format(add(i))} · sin vencimientos`;
+    return `<div class="day ${u?"":"empty"} ${i<6?"l":i>24?"r":""}" style="--c:var(--${tone(i)})"><span class="tip">${tip}</span><i style="height:${h}%"></i></div>`}).join("");
+  $("axis").innerHTML=per.map((_,i)=>`<span>${i===0?"Hoy":i%5===0?add(i).getDate():""}</span>`).join("");
+
+  // soon table (FEFO)
+  $("soonBody").innerHTML=soon.sort((a,b)=>a[3]-b[3]).slice(0,6).map(x=>{const t=tone(x[3]);
+    return `<tr class="t-${t}"><td class="prod"><b>${x[0]}</b><small>${x[1]} · ${x[2]}</small></td>
+    <td class="mono">${fmt.format(add(x[3]))}</td>
+    <td><span class="days">${x[3]===0?"Hoy":x[3]+" d"}</span><div class="bar"><i style="width:${Math.max(6,100-x[3]/15*100)}%"></i></div></td>
+    <td class="num mono">${x[4]}</td><td><span class="pill">${label(x[3])}</span></td></tr>`}).join("");
+
+  // expired
+  $("expBody").innerHTML=exp.sort((a,b)=>a[3]-b[3]).map(x=>`<tr class="t-crit"><td class="prod"><b>${x[0]}</b><small>${x[1]} · ${x[2]}</small></td>
+    <td class="mono">${fmt.format(add(x[3]))}</td><td><span class="days">${-x[3]} d</span></td><td class="num mono">${x[4]}</td>
+    <td class="num"><button class="row-act">Dar de baja</button></td></tr>`).join("");
+
+  // split
+  const parts=[["En buen estado","ok",sum(ok)],["Próximos a vencer","warn",sum(soon)],["Vencidos","crit",sum(exp)]];
+  $("splitTotal").textContent=units.toLocaleString("es");
+  $("split").innerHTML=parts.map(p=>`<i style="--c:var(--${p[1]});flex:${p[2]}" title="${p[0]}: ${p[2]}"></i>`).join("");
+  $("legend").innerHTML=parts.map(p=>`<div style="--c:var(--${p[1]})"><i></i><span>${p[0]}</span><b>${p[2]}</b><small>${Math.round(p[2]/units*100)}%</small></div>`).join("");
+
+  // nav highlight
+  document.querySelectorAll(".nav button").forEach(b=>b.addEventListener("click",()=>{
+    document.querySelectorAll(".nav button").forEach(o=>o.removeAttribute("aria-current"));b.setAttribute("aria-current","page")}));
+})();
+</script>

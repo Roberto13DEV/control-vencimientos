@@ -19,7 +19,7 @@ CREATE TABLE productos (
  lote VARCHAR(50),
  cantidad INT UNSIGNED NOT NULL DEFAULT 0,
  tiene_cambio TINYINT(1) NOT NULL DEFAULT 0,
- aviso_dias INT UNSIGNED NOT NULL DEFAULT 3,
+ fecha_cambio DATE NULL,
  producto_origen_id INT UNSIGNED NULL,
  vencimiento DATE NOT NULL,
  creado TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
