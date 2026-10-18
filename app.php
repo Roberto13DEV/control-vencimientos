@@ -23,6 +23,7 @@ try{
 }catch(Throwable $e){http_response_code(503);exit('No se pudo conectar con la base de datos. Revisa el archivo .env.');}
 
 const DIAS_PROXIMO=20;
+const DIAS_CRITICO=3;
 
 function e(mixed $v):string{return htmlspecialchars((string)$v,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');}
 function go(string $p):never{header('Location: '.$p);exit;}

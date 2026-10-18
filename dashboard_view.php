@@ -1,23 +1,73 @@
 <?php
-$stats=$db->query("SELECT COUNT(DISTINCT COALESCE(producto_origen_id,id)) total,COALESCE(SUM(cantidad),0) stock,COALESCE(SUM(vencimiento<CURDATE()),0) vencidos,COALESCE(SUM(vencimiento BETWEEN CURDATE() AND DATE_ADD(CURDATE(),INTERVAL ".DIAS_PROXIMO." DAY)),0) proximos,COALESCE(SUM(vencimiento>DATE_ADD(CURDATE(),INTERVAL ".DIAS_PROXIMO." DAY)),0) buenos FROM productos")->fetch_assoc();
-$upcoming=$db->query("SELECT producto,vencimiento,DATEDIFF(vencimiento,CURDATE()) dias FROM productos WHERE vencimiento BETWEEN CURDATE() AND DATE_ADD(CURDATE(),INTERVAL ".DIAS_PROXIMO." DAY) ORDER BY vencimiento LIMIT 5");
-$expired=$db->query("SELECT producto,vencimiento,DATEDIFF(vencimiento,CURDATE()) dias FROM productos WHERE vencimiento<CURDATE() ORDER BY vencimiento DESC LIMIT 5");
+$now=$db->query("SELECT CURDATE() hoy,HOUR(NOW()) hora")->fetch_assoc();$hoy=$now['hoy'];
+$items=array_map(fn($r)=>['dias'=>(int)$r['dias'],'cantidad'=>(int)$r['cantidad']]+$r,$db->query("SELECT id,producto,codigo,categoria,lote,cantidad,vencimiento,COALESCE(producto_origen_id,id) grupo,DATEDIFF(vencimiento,CURDATE()) dias FROM productos ORDER BY vencimiento,producto")->fetch_all(MYSQLI_ASSOC));
 $changes=$db->query("SELECT id,producto,vencimiento,DATEDIFF(vencimiento,CURDATE()) dias FROM productos WHERE tiene_cambio=1 AND vencimiento>=CURDATE() AND fecha_cambio<=CURDATE() ORDER BY vencimiento");
-$max=max(1,(int)$stats['buenos'],(int)$stats['proximos'],(int)$stats['vencidos']);
+$units=fn(array $rows):int=>array_sum(array_column($rows,'cantidad'));
+$expired=array_filter($items,fn($r)=>$r['dias']<0);
+$soon=array_filter($items,fn($r)=>$r['dias']>=0&&$r['dias']<=DIAS_PROXIMO);
+$good=array_filter($items,fn($r)=>$r['dias']>DIAS_PROXIMO);
+$total=count(array_unique(array_column($items,'grupo')));
+$categories=count(array_unique(array_filter(array_column($items,'categoria'))));
+$stock=$units($items);
+$week=count(array_filter($soon,fn($r)=>$r['dias']<=7));
+$tone=fn(int $d)=>$d<=DIAS_CRITICO?'crit':($d<=DIAS_PROXIMO?'warn':'ok');
+$label=fn(int $d)=>$d<0?'Vencido':($d<=DIAS_CRITICO?'Crítico':($d<=DIAS_PROXIMO?'Próximo':'En buen estado'));
+$months=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+$short=fn(string $date)=>(int)substr($date,8,2).' '.$months[(int)substr($date,5,2)-1];
+$addDays=fn(int $n)=>date('Y-m-d',strtotime("$hoy +$n day"));
+$plural=fn(int $n,string $one,string $many)=>$n.' '.($n===1?$one:$many);
+$weekdays=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+$greeting=$now['hora']<12?'Buenos días':($now['hora']<19?'Buenas tardes':'Buenas noches');
+$headline=$week||$expired?$plural($week,'producto vence','productos vencen').' esta semana y '.$plural(count($expired),'ya venció','ya vencieron').'.':'Nada vence esta semana. Todo en orden.';
+// Calendario: unidades que vencen cada día durante los próximos 30 días
+$runway=array_fill(0,31,[]);foreach($soon+$good as $r)if($r['dias']<=30)$runway[$r['dias']][]=$r;
+$runMax=max(1,...array_map($units,$runway));
+$parts=[['En buen estado','ok',$units($good)],['Próximos a vencer','warn',$units($soon)],['Vencidos','crit',$units($expired)]];
+$icon=['box'=>'<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/>','clock'=>'<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>','alert'=>'<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/>','stock'=>'<path d="M4 7h16v13H4zM8 7V4h8v3"/>','plus'=>'<path d="M12 5v14M5 12h14"/>','user'=>'<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-7 7-7s7 3 7 7M19 8v6M16 11h6"/>','history'=>'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>','list'=>'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>','search'=>'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'];
+$svg=fn(string $name,string $width='2')=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'.$width.'">'.$icon[$name].'</svg>';
 ?>
+<div class="dash">
+<div class="top"><div><div class="eyebrow">Control de vencimientos · <?=e($weekdays[(int)date('w',strtotime($hoy))].' '.(int)substr($hoy,8,2).' de '.$months[(int)substr($hoy,5,2)-1])?></div><h1><?=e($greeting.', '.$_SESSION['user'])?></h1><p><?=e($headline)?></p></div><div class="tools"><form class="dsearch" role="search"><?=$svg('search')?><input type="hidden" name="page" value="productos"><input name="q" placeholder="Buscar producto o lote…" aria-label="Buscar producto o lote"></form><a class="btn" href="?page=productos"><?=$svg('plus','2.4')?>Nuevo producto</a></div></div>
 <?php if($changes->num_rows):?><section class="change-notice"><strong>Productos que deben solicitar cambio</strong><div><?php while($c=$changes->fetch_assoc()):?><span><?=e($c['producto'])?> · vence en <?=e($c['dias'])?> días</span><?php endwhile?></div><a href="?page=productos">Revisar productos</a></section><?php endif?>
-<section class="metric-grid">
- <article class="metric blue"><div class="metric-icon">▣</div><div><small>PRODUCTOS<br>REGISTRADOS</small><strong><?=e($stats['total'])?></strong></div><a href="?page=productos">Ver detalle <b>›</b></a></article>
- <article class="metric amber"><div class="metric-icon">◷</div><div><small>PRÓXIMOS A<br>VENCER</small><strong><?=e($stats['proximos'])?></strong></div><a href="?page=productos">Ver detalle <b>›</b></a></article>
- <article class="metric red"><div class="metric-icon">!</div><div><small>PRODUCTOS<br>VENCIDOS</small><strong><?=e($stats['vencidos'])?></strong></div><a href="?page=productos">Ver detalle <b>›</b></a></article>
- <article class="metric green"><div class="metric-icon">◇</div><div><small>UNIDADES EN<br>STOCK</small><strong><?=e($stats['stock'])?></strong></div><a href="?page=productos">Ver detalle <b>›</b></a></article>
+<section class="kpis" aria-label="Resumen">
+ <a class="kpi t-info" href="?page=productos"><div class="kpi-head"><span class="kpi-label">Productos registrados</span><span class="kpi-ico"><?=$svg('box')?></span></div><div class="kpi-val"><?=e($total)?></div><div class="kpi-sub"><span><?=e($plural($categories,'categoría','categorías'))?></span><b>Ver →</b></div></a>
+ <a class="kpi t-warn" href="?page=productos"><div class="kpi-head"><span class="kpi-label">Próximos a vencer</span><span class="kpi-ico"><?=$svg('clock')?></span></div><div class="kpi-val"><?=e(count($soon))?></div><div class="kpi-sub"><span>en <?=DIAS_PROXIMO?> días o menos</span><b>Ver →</b></div></a>
+ <a class="kpi t-crit" href="?page=productos"><div class="kpi-head"><span class="kpi-label">Vencidos</span><span class="kpi-ico"><?=$svg('alert')?></span></div><div class="kpi-val"><?=e(count($expired))?></div><div class="kpi-sub"><span>pendientes de baja</span><b>Ver →</b></div></a>
+ <a class="kpi t-ok" href="?page=productos"><div class="kpi-head"><span class="kpi-label">Unidades en stock</span><span class="kpi-ico"><?=$svg('stock')?></span></div><div class="kpi-val"><?=e(number_format($stock,0,',','.'))?></div><div class="kpi-sub"><span><?=e($units($soon))?> en riesgo</span><b>Ver →</b></div></a>
 </section>
-<section class="dashboard-split">
- <article class="dash-panel"><div class="dash-title"><h2><i class="calendar">▦</i> Próximos a vencer</h2><a href="?page=productos">Ver todos</a></div><div class="table"><table><tr><th>Producto</th><th>Vencimiento</th><th>Días restantes</th><th>Estado</th></tr><?php if(!$upcoming->num_rows):?><tr><td colspan="4" class="empty">No hay productos próximos</td></tr><?php endif?><?php while($r=$upcoming->fetch_assoc()):?><tr><td><?=e($r['producto'])?></td><td><?=e(date('d/m/Y',strtotime($r['vencimiento'])))?></td><td class="amber-text"><?=e($r['dias'])?> días</td><td><span class="pill warn">Próximo</span></td></tr><?php endwhile?></table></div></article>
- <article class="dash-panel"><div class="dash-title danger-title"><h2><i>△</i> Productos vencidos</h2><a href="?page=productos">Ver todos</a></div><div class="table"><table><tr><th>Producto</th><th>Vencimiento</th><th>Días vencido</th><th>Estado</th></tr><?php if(!$expired->num_rows):?><tr><td colspan="4" class="empty">No hay productos vencidos</td></tr><?php endif?><?php while($r=$expired->fetch_assoc()):?><tr><td><?=e($r['producto'])?></td><td><?=e(date('d/m/Y',strtotime($r['vencimiento'])))?></td><td class="red-text"><?=e($r['dias'])?> días</td><td><span class="pill bad">Vencido</span></td></tr><?php endwhile?></table></div></article>
+<section class="dpanel"><div class="dpanel-head"><div><h2>Calendario de vencimientos · próximos 30 días</h2><p>Unidades que vencen cada día. Pasa el cursor por una barra para ver el detalle.</p></div></div>
+ <div><div class="runway"><?php foreach($runway as $i=>$day):$u=$units($day);?><div class="day<?=$u?'':' empty'?><?=$i<6?' l':($i>24?' r':'')?>" style="--c:var(--<?=$tone($i)?>)"><span class="tip"><?=e($short($addDays($i)))?> · <?=$u?e($u).' u.':'sin vencimientos'?><?php foreach($day as $r):?><br><?=e($r['producto'])?><?php endforeach?></span><i style="height:<?=$u?max(6,round($u/$runMax*100)):2?>%"></i></div><?php endforeach?></div>
+ <div class="runway-axis"><?php for($i=0;$i<=30;$i++):?><span><?=$i===0?'Hoy':($i%5===0?(int)substr($addDays($i),8,2):'')?></span><?php endfor?></div></div>
+ <div class="zones"><span style="--c:var(--crit)"><i></i>Crítico · 0–<?=DIAS_CRITICO?> días</span><span style="--c:var(--warn)"><i></i>Próximo · <?=DIAS_CRITICO+1?>–<?=DIAS_PROXIMO?> días</span><span style="--c:var(--ok)"><i></i>En buen estado · +<?=DIAS_PROXIMO?> días</span></div>
 </section>
-<section class="dashboard-bottom">
- <article class="dash-panel chart-panel"><h2>Resumen de vencimientos</h2><div class="chart"><div class="y-axis"><span><?=$max?></span><span><?=round($max/2)?></span><span>0</span></div><div class="bars"><div><b style="height:<?=max(5,(int)$stats['buenos']/$max*130)?>px"></b><strong><?=e($stats['buenos'])?></strong><span>En buen estado</span></div><div><b class="bar-amber" style="height:<?=max(5,(int)$stats['proximos']/$max*130)?>px"></b><strong><?=e($stats['proximos'])?></strong><span>Próximos a vencer</span></div><div><b class="bar-red" style="height:<?=max(5,(int)$stats['vencidos']/$max*130)?>px"></b><strong><?=e($stats['vencidos'])?></strong><span>Vencidos</span></div></div><div class="legend"><span>■ En buen estado</span><span>■ Próximos a vencer</span><span>■ Vencidos</span></div></div></article>
- <article class="dash-panel quick-panel"><h2><i>ϟ</i> Acciones rápidas</h2><div class="quick-grid"><a href="?page=productos"><i class="q-green">+</i><b>Nuevo Producto</b><small>Registrar producto</small></a><?php if(admin()):?><a href="?page=usuarios"><i class="q-purple">♙</i><b>Nuevo Usuario</b><small>Agregar usuario</small></a><a href="?page=historial"><i class="q-blue">▤</i><b>Ver Historial</b><small>Ver movimientos</small></a><?php endif?><a href="?page=productos"><i class="q-amber">▥</i><b>Ver inventario</b><small>Consultar datos</small></a></div></article>
-</section>
-<footer>© 2026 Control de Vencimientos · Sistema Profesional</footer>
+<div class="grid-2">
+ <section class="dpanel"><div class="dpanel-head"><div><h2>Próximos a vencer</h2><p class="fefo">Orden FEFO: lo primero que vence, sale primero.</p></div><a class="link" href="?page=productos">Ver todos →</a></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Producto</th><th>Vence</th><th>Restan</th><th class="num">Stock</th><th>Estado</th></tr></thead><tbody>
+  <?php if(!$soon):?><tr><td colspan="5" class="empty">No hay productos próximos a vencer</td></tr><?php endif?>
+  <?php foreach(array_slice($soon,0,6) as $r):$d=$r['dias'];?><tr class="t-<?=$tone($d)?>"><td class="prod"><b><?=e($r['producto'])?></b><small><?=e(implode(' · ',array_filter([$r['lote']?'Lote '.$r['lote']:'',$r['codigo'],$r['categoria']])))?></small></td><td class="mono"><?=e($short($r['vencimiento']))?></td><td><span class="days"><?=$d===0?'Hoy':$d.' d'?></span><div class="bar"><i style="width:<?=max(6,round(100-$d/DIAS_PROXIMO*100))?>%"></i></div></td><td class="num mono"><?=e($r['cantidad'])?></td><td><span class="pill"><?=$label($d)?></span></td></tr><?php endforeach?>
+  </tbody></table></div>
+ </section>
+ <section class="dpanel"><div class="dpanel-head"><div><h2>Estado del inventario</h2><p>Por unidades en stock</p></div></div>
+  <div class="big-total"><b><?=e(number_format($stock,0,',','.'))?></b><span>unidades</span></div>
+  <div class="split"><?php foreach($parts as [$name,$t,$u]):if($u):?><i style="--c:var(--<?=$t?>);flex:<?=$u?>" title="<?=e("$name: $u")?>"></i><?php endif;endforeach?></div>
+  <div class="dlegend"><?php foreach($parts as [$name,$t,$u]):?><div style="--c:var(--<?=$t?>)"><i></i><span><?=$name?></span><b><?=e($u)?></b><small><?=$stock?round($u/$stock*100):0?>%</small></div><?php endforeach?></div>
+ </section>
+</div>
+<div class="grid-2">
+ <section class="dpanel"><div class="dpanel-head"><div><h2>Productos vencidos</h2><p>Retíralos de la venta y regístralos como merma.</p></div><a class="link crit" href="?page=productos">Ver todos →</a></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Producto</th><th>Venció</th><th>Hace</th><th class="num">Unid.</th><th></th></tr></thead><tbody>
+  <?php if(!$expired):?><tr><td colspan="5" class="empty">No hay productos vencidos</td></tr><?php endif?>
+  <?php foreach(array_slice(array_reverse($expired),0,6) as $r):?><tr class="t-crit"><td class="prod"><b><?=e($r['producto'])?></b><small><?=e(implode(' · ',array_filter([$r['lote']?'Lote '.$r['lote']:'',$r['codigo'],$r['categoria']])))?></small></td><td class="mono"><?=e($short($r['vencimiento']))?></td><td><span class="days"><?=-$r['dias']?> d</span></td><td class="num mono"><?=e($r['cantidad'])?></td><td class="num"><?php if(admin()):?><form method="post" onsubmit="return confirm('¿Dar de baja este vencimiento?')"><input type="hidden" name="csrf" value="<?=e(csrf())?>"><input type="hidden" name="action" value="product_delete"><input type="hidden" name="id" value="<?=e($r['id'])?>"><input type="hidden" name="volver" value="dashboard"><button class="row-act">Dar de baja</button></form><?php endif?></td></tr><?php endforeach?>
+  </tbody></table></div>
+ </section>
+ <section class="dpanel"><div class="dpanel-head"><h2>Acciones rápidas</h2></div>
+  <div class="actions">
+   <a class="action t-ok" href="?page=productos"><span class="kpi-ico"><?=$svg('plus','2.2')?></span><span><b>Nuevo producto</b><small>Registrar lote</small></span></a>
+   <?php if(admin()):?><a class="action t-info" href="?page=usuarios"><span class="kpi-ico"><?=$svg('user')?></span><span><b>Nuevo usuario</b><small>Dar acceso</small></span></a>
+   <a class="action t-warn" href="?page=historial"><span class="kpi-ico"><?=$svg('history')?></span><span><b>Historial</b><small>Ver movimientos</small></span></a><?php endif?>
+   <a class="action t-crit" href="?page=productos"><span class="kpi-ico"><?=$svg('list')?></span><span><b>Ver inventario</b><small>Consultar y editar</small></span></a>
+  </div>
+ </section>
+</div>
+<footer>© 2026 Control de Vencimientos · VENCE+</footer>
+</div>
