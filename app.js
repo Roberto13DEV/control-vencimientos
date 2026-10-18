@@ -1,0 +1,1 @@
+document.addEventListener('click',function(event){var open=event.target.closest&&event.target.closest('details.add-expiry[open]');if(open&&event.target===open)open.removeAttribute('open')});document.addEventListener('keydown',function(event){if(event.key==='Escape')document.querySelectorAll('details.add-expiry[open]').forEach(function(item){item.removeAttribute('open')})});
