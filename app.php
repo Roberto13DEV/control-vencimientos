@@ -22,6 +22,8 @@ try{
  $db->set_charset('utf8mb4');
 }catch(Throwable $e){http_response_code(503);exit('No se pudo conectar con la base de datos. Revisa el archivo .env.');}
 
+const DIAS_PROXIMO=20;
+
 function e(mixed $v):string{return htmlspecialchars((string)$v,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8');}
 function go(string $p):never{header('Location: '.$p);exit;}
 function auth():bool{return isset($_SESSION['uid']);}
@@ -30,3 +32,6 @@ function csrf():string{if(empty($_SESSION['csrf']))$_SESSION['csrf']=bin2hex(ran
 function check_csrf():void{if(!hash_equals($_SESSION['csrf']??'',(string)($_POST['csrf']??''))){http_response_code(419);exit('Formulario vencido. Vuelve a intentarlo.');}}
 function flash(string $type,string $text):void{$_SESSION['flash']=[$type,$text];}
 function audit(mysqli $db,string $action):void{$id=(int)($_SESSION['uid']??0);$user=(string)($_SESSION['user']??'sistema');$s=$db->prepare('INSERT INTO historial(usuario_id,usuario,accion) VALUES(NULLIF(?,0),?,?)');$s->bind_param('iss',$id,$user,$action);$s->execute();}
+function valid_date(string $d):bool{return (bool)preg_match('/^(\d{4})-(\d{2})-(\d{2})$/',$d,$m)&&checkdate((int)$m[2],(int)$m[3],(int)$m[1]);}
+// [codigo,producto,categoria,proveedor,lote,cantidad,tiene_cambio,aviso_dias,vencimiento] o null si falta nombre o fecha
+function product_fields():?array{$name=trim((string)($_POST['producto']??''));$date=(string)($_POST['vencimiento']??'');if($name===''||!valid_date($date))return null;return [trim((string)($_POST['codigo']??'')),$name,trim((string)($_POST['categoria']??'')),trim((string)($_POST['proveedor']??'')),trim((string)($_POST['lote']??'')),max(0,(int)($_POST['cantidad']??0)),isset($_POST['tiene_cambio'])?1:0,max(1,min(365,(int)($_POST['aviso_dias']??3))),$date];}

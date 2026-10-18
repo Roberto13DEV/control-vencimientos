@@ -1,6 +1,6 @@
 <?php
-$stats=$db->query("SELECT COUNT(*) total,COALESCE(SUM(cantidad),0) stock,COALESCE(SUM(vencimiento<CURDATE()),0) vencidos,COALESCE(SUM(vencimiento BETWEEN CURDATE() AND DATE_ADD(CURDATE(),INTERVAL 20 DAY)),0) proximos,COALESCE(SUM(vencimiento>DATE_ADD(CURDATE(),INTERVAL 20 DAY)),0) buenos FROM productos")->fetch_assoc();
-$upcoming=$db->query("SELECT producto,vencimiento,DATEDIFF(vencimiento,CURDATE()) dias FROM productos WHERE vencimiento BETWEEN CURDATE() AND DATE_ADD(CURDATE(),INTERVAL 20 DAY) ORDER BY vencimiento LIMIT 5");
+$stats=$db->query("SELECT COUNT(DISTINCT COALESCE(producto_origen_id,id)) total,COALESCE(SUM(cantidad),0) stock,COALESCE(SUM(vencimiento<CURDATE()),0) vencidos,COALESCE(SUM(vencimiento BETWEEN CURDATE() AND DATE_ADD(CURDATE(),INTERVAL ".DIAS_PROXIMO." DAY)),0) proximos,COALESCE(SUM(vencimiento>DATE_ADD(CURDATE(),INTERVAL ".DIAS_PROXIMO." DAY)),0) buenos FROM productos")->fetch_assoc();
+$upcoming=$db->query("SELECT producto,vencimiento,DATEDIFF(vencimiento,CURDATE()) dias FROM productos WHERE vencimiento BETWEEN CURDATE() AND DATE_ADD(CURDATE(),INTERVAL ".DIAS_PROXIMO." DAY) ORDER BY vencimiento LIMIT 5");
 $expired=$db->query("SELECT producto,vencimiento,DATEDIFF(vencimiento,CURDATE()) dias FROM productos WHERE vencimiento<CURDATE() ORDER BY vencimiento DESC LIMIT 5");
 $changes=$db->query("SELECT id,producto,vencimiento,DATEDIFF(vencimiento,CURDATE()) dias FROM productos WHERE tiene_cambio=1 AND vencimiento>=CURDATE() AND DATEDIFF(vencimiento,CURDATE())<=aviso_dias ORDER BY vencimiento");
 $max=max(1,(int)$stats['buenos'],(int)$stats['proximos'],(int)$stats['vencidos']);
