@@ -1,6 +1,6 @@
 <?php
 $now=$db->query("SELECT CURDATE() hoy,HOUR(NOW()) hora")->fetch_assoc();$hoy=$now['hoy'];
-$items=array_map(fn($r)=>['dias'=>(int)$r['dias'],'cantidad'=>(int)$r['cantidad']]+$r,$db->query("SELECT id,producto,codigo,categoria,lote,cantidad,vencimiento,COALESCE(producto_origen_id,id) grupo,DATEDIFF(vencimiento,CURDATE()) dias FROM productos ORDER BY vencimiento,producto")->fetch_all(MYSQLI_ASSOC));
+$items=array_map(fn($r)=>['dias'=>(int)$r['dias'],'cantidad'=>(int)$r['cantidad']]+$r,$db->query("SELECT id,producto,codigo,categoria,proveedor,lote,cantidad,tiene_cambio,fecha_cambio,vencimiento,COALESCE(producto_origen_id,id) grupo,DATEDIFF(vencimiento,CURDATE()) dias FROM productos ORDER BY vencimiento,producto")->fetch_all(MYSQLI_ASSOC));
 $changes=$db->query("SELECT id,producto,vencimiento,DATEDIFF(vencimiento,CURDATE()) dias FROM productos WHERE tiene_cambio=1 AND vencimiento>=CURDATE() AND fecha_cambio<=CURDATE() ORDER BY vencimiento");
 $units=fn(array $rows):int=>array_sum(array_column($rows,'cantidad'));
 $expired=array_filter($items,fn($r)=>$r['dias']<0);
@@ -27,7 +27,7 @@ $icon=['box'=>'<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v
 $svg=fn(string $name,string $width='2')=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'.$width.'">'.$icon[$name].'</svg>';
 ?>
 <div class="dash">
-<div class="top"><div><div class="eyebrow">Control de vencimientos · <?=e($weekdays[(int)date('w',strtotime($hoy))].' '.(int)substr($hoy,8,2).' de '.$months[(int)substr($hoy,5,2)-1])?></div><h1><?=e($greeting.', '.$_SESSION['user'])?></h1><p><?=e($headline)?></p></div><div class="tools"><form class="dsearch" role="search"><?=$svg('search')?><input type="hidden" name="page" value="productos"><input name="q" placeholder="Buscar producto o lote…" aria-label="Buscar producto o lote"></form><a class="btn" href="?page=productos"><?=$svg('plus','2.4')?>Nuevo producto</a></div></div>
+<div class="top"><div><div class="eyebrow">Control de vencimientos · <?=e($weekdays[(int)date('w',strtotime($hoy))].' '.(int)substr($hoy,8,2).' de '.$months[(int)substr($hoy,5,2)-1])?></div><h1><?=e($greeting.', '.$_SESSION['user'])?></h1><p><?=e($headline)?></p></div><div class="tools"><form class="dsearch" role="search"><?=$svg('search')?><input type="hidden" name="page" value="productos"><input name="q" placeholder="Buscar producto…" aria-label="Buscar producto"></form><a class="btn" href="?page=productos"><?=$svg('plus','2.4')?>Nuevo producto</a></div></div>
 <?php if($changes->num_rows):?><section class="change-notice"><strong>Productos que deben solicitar cambio</strong><div><?php while($c=$changes->fetch_assoc()):?><span><?=e($c['producto'])?> · vence en <?=e($c['dias'])?> días</span><?php endwhile?></div><a href="?page=productos">Revisar productos</a></section><?php endif?>
 <section class="kpis" aria-label="Resumen">
  <a class="kpi t-info" href="?page=productos"><div class="kpi-head"><span class="kpi-label">Productos registrados</span><span class="kpi-ico"><?=$svg('box')?></span></div><div class="kpi-val"><?=e($total)?></div><div class="kpi-sub"><span><?=e($plural($categories,'categoría','categorías'))?></span><b>Ver →</b></div></a>
@@ -44,14 +44,27 @@ $svg=fn(string $name,string $width='2')=>'<svg viewBox="0 0 24 24" fill="none" s
  <section class="dpanel"><div class="dpanel-head"><div><h2>Próximos a vencer</h2><p class="fefo">Orden FEFO: lo primero que vence, sale primero.</p></div><a class="link" href="?page=productos">Ver todos →</a></div>
   <div class="tbl-wrap"><table><thead><tr><th>Producto</th><th>Vence</th><th>Restan</th><th class="num">Stock</th><th>Estado</th></tr></thead><tbody>
   <?php if(!$soon):?><tr><td colspan="5" class="empty">No hay productos próximos a vencer</td></tr><?php endif?>
-  <?php foreach(array_slice($soon,0,6) as $r):$d=$r['dias'];?><tr class="t-<?=$tone($d)?>"><td class="prod"><b><?=e($r['producto'])?></b><small><?=e(implode(' · ',array_filter([$r['lote']?'Lote '.$r['lote']:'',$r['codigo'],$r['categoria']])))?></small></td><td class="mono"><?=e($short($r['vencimiento']))?></td><td><span class="days"><?=$d===0?'Hoy':$d.' d'?></span><div class="bar"><i style="width:<?=max(6,round(100-$d/DIAS_PROXIMO*100))?>%"></i></div></td><td class="num mono"><?=e($r['cantidad'])?></td><td><span class="pill"><?=$label($d)?></span></td></tr><?php endforeach?>
+  <?php foreach(array_values(array_slice($soon,0,6)) as $i=>$r):$d=$r['dias'];?><tr class="t-<?=$tone($d)?><?=$i?'':' sel'?>" data-detail="<?=$i?>" tabindex="0" aria-controls="detalle-<?=$i?>"><td class="prod"><b><?=e($r['producto'])?></b><small><?=e(implode(' · ',array_filter([$r['lote']?'Lote '.$r['lote']:'',$r['codigo'],$r['categoria']])))?></small></td><td class="mono"><?=e($short($r['vencimiento']))?></td><td><span class="days"><?=$d===0?'Hoy':$d.' d'?></span><div class="bar"><i style="width:<?=max(6,round(100-$d/DIAS_PROXIMO*100))?>%"></i></div></td><td class="num mono"><?=e($r['cantidad'])?></td><td><span class="pill"><?=$label($d)?></span></td></tr><?php endforeach?>
   </tbody></table></div>
  </section>
+ <div class="side">
+ <?php foreach(array_values(array_slice($soon,0,6)) as $i=>$r):$d=$r['dias'];
+  // Línea de tiempo del lote: hoy, fecha para pedir el cambio (si aplica) y vencimiento, en orden
+  $points=[['Hoy',$hoy,'now']];if($r['tiene_cambio']&&$r['fecha_cambio'])$points[]=['Pedir cambio al proveedor'.($r['fecha_cambio']<=$hoy?' · ya toca':''),$r['fecha_cambio'],''];$points[]=['Vence',$r['vencimiento'],'end'];usort($points,fn($a,$b)=>strcmp($a[1],$b[1]));
+  $provider=trim((string)$r['proveedor']);?>
+  <section class="dpanel detail t-<?=$tone($d)?>" id="detalle-<?=$i?>"<?=$i?' hidden':''?> aria-label="Detalle de <?=e($r['producto'])?>">
+   <div class="detail-top"><span class="kpi-ico"><?=$svg('box')?></span><div><h2><?=e($r['producto'])?></h2><small><?=e(implode(' · ',array_filter([$r['lote']?'Lote '.$r['lote']:'',$r['codigo'],$r['categoria']])))?></small></div><?php if(count($soon)>1):?><button class="next" type="button" data-next="<?=$i+1?>" aria-label="Siguiente producto">›</button><?php endif?></div>
+   <div class="detail-big"><div><div class="detail-label">Restan</div><div class="detail-val"><?=$d===0?'Vence hoy':e($plural($d,'día','días'))?></div></div><span class="pill"><?=$label($d)?></span></div>
+   <ol class="timeline"><?php foreach($points as [$text,$date,$cls]):?><li class="<?=$cls?>"><b><?=e($text)?></b><small><?=e($short($date))?></small></li><?php endforeach?></ol>
+   <div class="owner"><span class="avatar"><?=e($provider===''?'—':mb_strtoupper(mb_substr($provider,0,2)))?></span><div><b><?=e($provider===''?'Sin proveedor':$provider)?></b><small>Proveedor · <?=e($r['cantidad'])?> unidades</small></div><a class="link" href="?page=productos&amp;q=<?=e(urlencode($r['producto']))?>">Ver →</a></div>
+  </section>
+ <?php endforeach?>
  <section class="dpanel"><div class="dpanel-head"><div><h2>Estado del inventario</h2><p>Por unidades en stock</p></div></div>
   <div class="big-total"><b><?=e(number_format($stock,0,',','.'))?></b><span>unidades</span></div>
   <div class="split"><?php foreach($parts as [$name,$t,$u]):if($u):?><i style="--c:var(--<?=$t?>);flex:<?=$u?>" title="<?=e("$name: $u")?>"></i><?php endif;endforeach?></div>
   <div class="dlegend"><?php foreach($parts as [$name,$t,$u]):?><div style="--c:var(--<?=$t?>)"><i></i><span><?=$name?></span><b><?=e($u)?></b><small><?=$stock?round($u/$stock*100):0?>%</small></div><?php endforeach?></div>
  </section>
+ </div>
 </div>
 <div class="grid-2">
  <section class="dpanel"><div class="dpanel-head"><div><h2>Productos vencidos</h2><p>Retíralos de la venta y regístralos como merma.</p></div><a class="link crit" href="?page=productos">Ver todos →</a></div>
@@ -62,7 +75,7 @@ $svg=fn(string $name,string $width='2')=>'<svg viewBox="0 0 24 24" fill="none" s
  </section>
  <section class="dpanel"><div class="dpanel-head"><h2>Acciones rápidas</h2></div>
   <div class="actions">
-   <a class="action t-ok" href="?page=productos"><span class="kpi-ico"><?=$svg('plus','2.2')?></span><span><b>Nuevo producto</b><small>Registrar lote</small></span></a>
+   <a class="action t-ok" href="?page=productos"><span class="kpi-ico"><?=$svg('plus','2.2')?></span><span><b>Nuevo producto</b><small>Registrar vencimiento</small></span></a>
    <?php if(admin()):?><a class="action t-info" href="?page=usuarios"><span class="kpi-ico"><?=$svg('user')?></span><span><b>Nuevo usuario</b><small>Dar acceso</small></span></a>
    <a class="action t-warn" href="?page=historial"><span class="kpi-ico"><?=$svg('history')?></span><span><b>Historial</b><small>Ver movimientos</small></span></a><?php endif?>
    <a class="action t-crit" href="?page=productos"><span class="kpi-ico"><?=$svg('list')?></span><span><b>Ver inventario</b><small>Consultar y editar</small></span></a>
