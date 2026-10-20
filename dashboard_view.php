@@ -59,6 +59,14 @@ $svg=fn(string $name,string $width='2')=>'<svg viewBox="0 0 24 24" fill="none" s
    <div class="owner"><span class="avatar"><?=e($provider===''?'—':mb_strtoupper(mb_substr($provider,0,2)))?></span><div><b><?=e($provider===''?'Sin proveedor':$provider)?></b><small>Proveedor · <?=e($r['cantidad'])?> unidades</small></div><a class="link" href="?page=productos&amp;q=<?=e(urlencode($r['producto']))?>">Ver →</a></div>
   </section>
  <?php endforeach?>
+ <?php if(!$soon):$next=reset($good)?:null;?>
+  <section class="dpanel detail t-ok" aria-label="Sin productos próximos a vencer">
+   <div class="detail-top"><span class="kpi-ico"><?=$svg('box')?></span><div><h2>Nada por vencer</h2><small>Próximos <?=DIAS_PROXIMO?> días</small></div></div>
+   <div class="detail-big"><div><div class="detail-label">Próximo vencimiento</div><div class="detail-val"><?=$next?e('en '.$plural($next['dias'],'día','días')):'Sin productos'?></div></div><span class="pill">Todo en orden</span></div>
+   <ol class="timeline"><li class="now"><b>Hoy</b><small><?=e($short($hoy))?></small></li><li><b>Sin vencimientos</b><small>hasta el <?=e($short($addDays(DIAS_PROXIMO)))?></small></li><?php if($next):?><li class="end"><b><?=e($next['producto'])?></b><small><?=e($short($next['vencimiento']))?></small></li><?php endif?></ol>
+   <div class="owner"><span class="avatar"><?=$svg('plus','2.4')?></span><div><b><?=$items?'Registra otro vencimiento':'Aún no hay productos'?></b><small>Aparecerán aquí al acercarse su fecha</small></div><a class="link" href="?page=productos">Registrar →</a></div>
+  </section>
+ <?php endif?>
  <section class="dpanel"><div class="dpanel-head"><div><h2>Estado del inventario</h2><p>Por unidades en stock</p></div></div>
   <div class="big-total"><b><?=e(number_format($stock,0,',','.'))?></b><span>unidades</span></div>
   <div class="split"><?php foreach($parts as [$name,$t,$u]):if($u):?><i style="--c:var(--<?=$t?>);flex:<?=$u?>" title="<?=e("$name: $u")?>"></i><?php endif;endforeach?></div>
