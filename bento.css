@@ -1,0 +1,182 @@
+/* Estilo "bento": barra lateral negra solo con iconos, tarjetas pastel y esquinas grandes.
+   Se carga al final; para volver al diseño anterior basta con quitar esta hoja en index.php. */
+:root{--bg:#EEF0F2;--surface:#fff;--sunken:#F5F6F7;--fg:#111214;--muted:#7A7F87;--line:#ECEEF0;--rail:#0E0F11;--rail-fg:#8A8F98;--rail-hi:#fff;
+ --lime:#D6F35B;--peach:#FFDCCB;--orange:#FF6A2C;
+ --accent:#111214;--accent-soft:#F0F9C9;
+ --ok:#7DB10F;--ok-soft:#EEF9C8;--warn:#F2A13A;--warn-soft:#FFE9D9;--crit:#FF5A1F;--crit-soft:#FFE2D6;--info:#111214;--info-soft:#F0F1F3;
+ --f-display:"Plus Jakarta Sans",ui-sans-serif,system-ui,sans-serif;--f-body:"Plus Jakarta Sans",ui-sans-serif,system-ui,sans-serif;
+ --r:24px;--shadow:0 1px 2px rgba(17,18,20,.04),0 8px 24px rgba(17,18,20,.04);--teal:var(--accent);--ink:var(--fg)}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--f-body)}
+h1,h2,h3{font-family:var(--f-display);letter-spacing:-.02em}
+
+/* ---------- barra lateral ---------- */
+aside{width:88px;padding:22px 0;gap:30px;align-items:center;background:var(--rail);overflow:visible;z-index:20}
+.brand{padding:0}
+.brand b{width:46px;height:46px;border-radius:50%;background:var(--lime);color:var(--fg);display:flex;align-items:center;justify-content:center;font:800 16px/1 var(--f-display);letter-spacing:-.04em}
+.brand b span{color:var(--fg)}
+.brand small{display:none}
+aside nav{width:100%;gap:10px;align-items:center;overflow:visible}
+aside nav a{position:relative;width:48px;height:48px;padding:0;justify-content:center;border-radius:50%;color:var(--rail-fg);margin:0}
+aside nav a:hover{background:rgba(255,255,255,.08);color:var(--rail-hi)}
+aside nav svg{width:20px;height:20px}
+/* pestaña activa: un círculo del color del fondo que "muerde" el borde de la barra */
+aside nav a.active{width:auto;align-self:stretch;margin-left:20px;padding-left:14px;justify-content:flex-start;border-radius:24px 0 0 24px;background:var(--bg);color:var(--fg);box-shadow:none}
+aside nav a.active::before,aside nav a.active::after{content:"";position:absolute;right:0;width:20px;height:20px;pointer-events:none}
+aside nav a.active::before{top:-20px;background:radial-gradient(circle at 0 0,transparent 19.5px,var(--bg) 20px)}
+aside nav a.active::after{bottom:-20px;background:radial-gradient(circle at 0 100%,transparent 19.5px,var(--bg) 20px)}
+aside nav .count{position:absolute;top:2px;left:30px;margin:0;min-width:18px;padding:3px 5px;font:700 10px/1 var(--f-body);text-align:center;background:var(--orange);border:2px solid var(--rail)}
+aside nav a.active .count{left:44px;border-color:var(--bg)}
+/* nombres como globito al pasar el cursor */
+aside .lbl{position:absolute;left:calc(100% + 12px);top:50%;transform:translate(-4px,-50%);background:var(--fg);color:#fff;font:600 13px/1.3 var(--f-body);padding:7px 11px;border-radius:10px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;box-shadow:0 8px 24px rgba(0,0,0,.18);z-index:30}
+aside nav a.active .lbl{left:calc(100% + 32px)}
+aside a:hover .lbl,aside a:focus-visible .lbl,aside .user:hover .lbl,aside .logout button:hover .lbl,aside .logout button:focus-visible .lbl{opacity:1;transform:translate(0,-50%)}
+.rail-foot{align-items:center;gap:14px}
+aside .user{position:relative;padding:0;background:none}
+aside .user .lbl b{color:#fff;font-size:13px}aside .user .lbl small{color:#B9BDC4;font-size:11px}
+.avatar{width:44px;height:44px;background:#fff;color:var(--fg);font:700 14px var(--f-display);box-shadow:0 0 0 3px rgba(255,255,255,.12)}
+.logout button{position:relative;width:44px;height:44px;padding:0;border-radius:50%;display:grid;place-items:center;border:0;background:transparent;color:var(--rail-fg)}
+.logout button:hover{background:rgba(255,255,255,.08);color:#fff}
+.logout svg{width:19px;height:19px}
+
+/* ---------- área de trabajo ---------- */
+.content{margin-left:88px;padding:28px 32px 40px}
+.eyebrow{font:500 13px/1.2 var(--f-body);letter-spacing:0;text-transform:none;color:var(--muted)}
+.content h1{font:800 30px/1.15 var(--f-display);letter-spacing:-.03em;margin:6px 0 0}
+.panel,.dpanel{background:var(--surface);border:0;border-radius:var(--r);box-shadow:var(--shadow)}
+.panel{padding:24px}
+.panel h2{font-size:18px}
+footer{color:var(--muted)}
+
+/* barra superior del resumen: buscador, campana y botón en píldoras */
+.tools{gap:10px}
+.dsearch{height:46px;border:0;border-radius:999px;padding:0 18px;box-shadow:var(--shadow)}
+.bell{position:relative;flex:none;width:46px;height:46px;border-radius:50%;background:var(--surface);display:grid;place-items:center;color:var(--fg);box-shadow:var(--shadow)}
+.bell:hover{background:var(--sunken)}
+.bell svg{width:18px;height:18px}
+.bell i{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:var(--orange);color:#fff;font:700 11px/20px var(--f-body);font-style:normal;text-align:center;border:2px solid var(--bg)}
+.btn{height:46px;padding:0 20px;border-radius:999px;background:var(--fg);color:#fff}
+.btn:hover{filter:none;background:#2A2C30}
+
+/* ---------- tarjetas de resumen (bento) ---------- */
+.kpi{border:0;border-radius:var(--r);padding:22px;gap:12px;box-shadow:var(--shadow);transition:transform .2s ease,box-shadow .2s ease;isolation:isolate}
+.kpi:hover{border:0;transform:translateY(-5px);box-shadow:0 14px 34px rgba(17,18,20,.1)}
+/* mancha de color decorativa en la esquina, como en el diseño */
+.kpi::before{inset:-40px -40px auto auto;width:150px;height:130px;border-radius:46% 54% 40% 60%/55% 45% 55% 45%;background:var(--blob,transparent);z-index:-1;transform:rotate(-18deg)}
+.kpi-label{color:var(--fg);font-weight:600}
+.kpi-ico{width:40px;height:40px;border-radius:50%;background:var(--fg);color:var(--ico,#fff)}
+.kpi-ico svg{width:18px;height:18px}
+.kpi-val{font:800 40px/1 var(--f-display);letter-spacing:-.04em}
+.kpi-sub{color:var(--muted)}
+.kpi-sub b{color:var(--fg);background:rgba(255,255,255,.7);padding:2px 10px;border-radius:999px;font-size:12px}
+.kpi.t-info{--blob:var(--lime);--ico:var(--lime)}
+.kpi.t-warn{--blob:var(--peach);--ico:#FFB48C}
+.kpi.t-crit{background:var(--orange);color:#fff;--ico:var(--orange)}
+.kpi.t-crit .kpi-label,.kpi.t-crit .kpi-sub{color:rgba(255,255,255,.85)}
+.kpi.t-crit .kpi-ico{background:#fff}
+.kpi.t-crit .kpi-sub b{background:#fff;color:var(--fg)}
+.kpi.t-crit::before{background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.22),transparent 70%)}
+.kpi.t-ok{background:var(--lime);--ico:var(--lime)}
+.kpi.t-ok .kpi-sub{color:#3E4A12}
+
+/* ---------- paneles ---------- */
+.grid-2{align-items:start}
+.dpanel{padding:22px}
+.dpanel h2{font:700 17px/1.3 var(--f-display)}
+.link{color:var(--fg);font-weight:700;font-size:13px;background:var(--sunken);padding:7px 14px;border-radius:999px}
+.link:hover{text-decoration:none;background:var(--lime)}
+.link.crit{color:var(--fg)}.link.crit:hover{background:var(--peach)}
+.dash .change-notice{border-radius:var(--r)}
+
+.runway{height:140px;gap:4px;border-bottom:0}
+.day i{border-radius:8px;opacity:1}
+.day.empty i{background:var(--sunken);height:10px!important;border-radius:6px}
+.day:hover i{outline-offset:2px}
+.day .tip{border-radius:10px;padding:8px 10px}
+.runway-axis{font:500 11px/1 var(--f-body)}
+.zones i{border-radius:50%}
+
+/* tablas: cabecera suave y filas redondeadas */
+.dash th,th{font:600 12px/1 var(--f-body);letter-spacing:0;text-transform:none;color:var(--muted)}
+th,td{border-bottom:1px solid var(--line)}
+.dash tbody tr:hover td{background:var(--sunken)}
+.dash tbody tr td:first-child{border-radius:14px 0 0 14px}.dash tbody tr td:last-child{border-radius:0 14px 14px 0}
+.dash tbody tr.sel td{background:var(--sunken)}
+.prod small{font:500 12px var(--f-body);color:var(--muted)}
+.mono{font-family:var(--f-body);font-weight:500}
+.days{font:700 13px var(--f-body);color:var(--fg)}
+.bar{height:8px;border-radius:999px;background:var(--sunken)}
+.dash .pill{color:color-mix(in srgb,var(--tone) 55%,#111);background:var(--tone-soft);font-weight:700}
+.dash .pill::before{background:var(--tone)}
+.dash .row-act{border-radius:999px}
+
+/* tarjeta de detalle: fondo de color pleno según el estado */
+.detail{border-radius:var(--r);background:linear-gradient(160deg,var(--tone-soft) 0%,var(--surface) 75%)}
+.detail.t-ok{background:var(--lime)}
+.detail.t-ok .owner,.detail.t-ok .next{background:rgba(255,255,255,.65);border-color:transparent}
+.detail.t-ok .detail-val{color:var(--fg)}
+.detail.t-ok .pill{background:#fff}
+.detail-top .kpi-ico{border-radius:50%;background:var(--fg);color:#fff;border:0}
+.detail-top small{font:500 12px var(--f-body)}
+.detail-val{font-weight:800}
+.detail .next{background:var(--fg);color:#fff;border:0}
+.detail .next:hover{background:#2A2C30;color:#fff}
+.timeline small{font:500 12px var(--f-body)}
+.timeline li.now::before{border-color:var(--fg);background:var(--fg);box-shadow:0 0 0 4px rgba(17,18,20,.1)}
+.owner{border:0;border-radius:18px;background:var(--sunken)}
+.owner .avatar{width:38px;height:38px;background:var(--fg);color:#fff;box-shadow:none}
+.owner .link{background:#fff}
+
+.split{height:16px;border-radius:999px;background:var(--sunken)}
+.split i{border-radius:999px}
+.dlegend i{border-radius:50%}
+.dlegend small{font:500 12px var(--f-body)}
+.big-total b{font-weight:800}
+
+.action{border:0;border-radius:18px;background:var(--sunken);transition:transform .2s ease,background .2s}
+.action:hover{border:0;background:var(--tone-soft);transform:translateY(-3px)}
+.action .kpi-ico{background:var(--tone-soft);color:color-mix(in srgb,var(--tone) 60%,#111)}
+.action.t-info .kpi-ico{background:var(--fg);color:var(--lime)}
+
+/* ---------- formularios y otras páginas ---------- */
+input,select{border:1px solid var(--line);border-radius:14px;background:var(--sunken);padding:12px 14px}
+input:focus,select:focus{outline:none;border-color:var(--fg);background:#fff}
+button{border-radius:999px;background:var(--fg);padding:11px 20px}
+button:hover{background:#2A2C30}
+.search input{border-radius:999px}
+.badge{font-weight:700}
+.good{background:var(--ok-soft);color:#3E5A06}.warn{background:var(--warn-soft);color:#8A4B00}.bad{background:var(--crit-soft);color:#A8310B}
+.delete{background:var(--crit-soft);color:#A8310B}.delete:hover{background:var(--peach)}
+.alert{border-radius:16px}
+.ok{background:var(--ok-soft);color:#3E5A06}.error{background:var(--crit-soft);color:#A8310B}
+.change-notice{background:var(--peach);border:0;border-radius:var(--r);color:#5A2A12}
+.change-notice a{background:var(--fg);border-radius:999px;padding:9px 14px}
+.add-expiry summary{background:var(--accent-soft);color:var(--fg);border-radius:999px;padding:7px 12px}
+.add-expiry[open] form{border-radius:var(--r)!important}
+.add-expiry[open] form:before{color:var(--fg)}
+.exchange-badge{background:var(--warn-soft);color:#8A4B00}
+
+/* ---------- inicio de sesión ---------- */
+.auth{background:radial-gradient(40% 50% at 15% 20%,rgba(214,243,91,.35),transparent 70%),radial-gradient(40% 50% at 85% 80%,rgba(255,106,44,.35),transparent 70%),var(--rail)}
+.login-card{border-radius:28px;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+.logo{font-family:var(--f-display);font-weight:800;letter-spacing:-.04em}
+.logo span{color:var(--orange)}
+.login-card button{padding:14px}
+
+/* ---------- pantallas medianas y móviles ---------- */
+@media(max-width:900px){
+ aside{position:sticky;top:0;width:auto;flex-direction:row;align-items:center;gap:6px;padding:10px 12px;overflow-x:auto;overflow-y:hidden}
+ .brand b{width:40px;height:40px;font-size:14px}
+ aside nav{width:auto;flex-direction:row;gap:2px}
+ aside nav a,aside nav a.active{width:40px;height:40px;margin:0;padding:0;justify-content:center;align-self:center;border-radius:50%}
+ aside nav a.active{background:#fff}
+ aside nav a.active::before,aside nav a.active::after{display:none}
+ aside nav .count,aside nav a.active .count{left:26px;top:0;border-color:var(--rail)}
+ .rail-foot{display:flex;flex-direction:row;margin:0 0 0 auto;gap:2px}
+ .logout{display:block}.logout button{width:38px;height:38px}
+ .avatar{width:38px;height:38px;font-size:12px}
+ /* en móvil los nombres quedan solo para lectores de pantalla */
+ aside .lbl{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;opacity:1}
+ .content{margin:0;padding:20px 16px 32px}
+}
+@media(max-width:520px){.kpi{padding:16px}.kpi-val{font-size:30px}.kpi::before{width:110px;height:100px}}
+@media(prefers-reduced-motion:reduce){.kpi:hover,.action:hover{transform:none}}
