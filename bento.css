@@ -1,4 +1,4 @@
-/* Estilo "bento": barra lateral negra solo con iconos, tarjetas pastel y esquinas grandes.
+/* Estilo "bento": barra lateral negra con pestaña curva, tarjetas pastel y esquinas grandes.
    Se carga al final; para volver al diseño anterior basta con quitar esta hoja en index.php. */
 :root{--bg:#EEF0F2;--surface:#fff;--sunken:#F5F6F7;--fg:#111214;--muted:#7A7F87;--line:#ECEEF0;--rail:#0E0F11;--rail-fg:#8A8F98;--rail-hi:#fff;
  --lime:#D6F35B;--peach:#FFDCCB;--orange:#FF6A2C;
@@ -10,36 +10,33 @@ body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--f-body)}
 h1,h2,h3{font-family:var(--f-display);letter-spacing:-.02em}
 
 /* ---------- barra lateral ---------- */
-aside{width:88px;padding:22px 0;gap:30px;align-items:center;background:var(--rail);overflow:visible;z-index:20}
-.brand{padding:0}
-.brand b{width:46px;height:46px;border-radius:50%;background:var(--lime);color:var(--fg);display:flex;align-items:center;justify-content:center;font:800 16px/1 var(--f-display);letter-spacing:-.04em}
-.brand b span{color:var(--fg)}
-.brand small{display:none}
-aside nav{width:100%;gap:10px;align-items:center;overflow:visible}
-aside nav a{position:relative;width:48px;height:48px;padding:0;justify-content:center;border-radius:50%;color:var(--rail-fg);margin:0}
-aside nav a:hover{background:rgba(255,255,255,.08);color:var(--rail-hi)}
-aside nav svg{width:20px;height:20px}
-/* pestaña activa: un círculo del color del fondo que "muerde" el borde de la barra */
-aside nav a.active{width:auto;align-self:stretch;margin-left:20px;padding-left:14px;justify-content:flex-start;border-radius:24px 0 0 24px;background:var(--bg);color:var(--fg);box-shadow:none}
-aside nav a.active::before,aside nav a.active::after{content:"";position:absolute;right:0;width:20px;height:20px;pointer-events:none}
-aside nav a.active::before{top:-20px;background:radial-gradient(circle at 0 0,transparent 19.5px,var(--bg) 20px)}
-aside nav a.active::after{bottom:-20px;background:radial-gradient(circle at 0 100%,transparent 19.5px,var(--bg) 20px)}
-aside nav .count{position:absolute;top:2px;left:30px;margin:0;min-width:18px;padding:3px 5px;font:700 10px/1 var(--f-body);text-align:center;background:var(--orange);border:2px solid var(--rail)}
-aside nav a.active .count{left:44px;border-color:var(--bg)}
-/* nombres como globito al pasar el cursor */
-aside .lbl{position:absolute;left:calc(100% + 12px);top:50%;transform:translate(-4px,-50%);background:var(--fg);color:#fff;font:600 13px/1.3 var(--f-body);padding:7px 11px;border-radius:10px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;box-shadow:0 8px 24px rgba(0,0,0,.18);z-index:30}
-aside nav a.active .lbl{left:calc(100% + 32px)}
-aside a:hover .lbl,aside a:focus-visible .lbl,aside .user:hover .lbl,aside .logout button:hover .lbl,aside .logout button:focus-visible .lbl{opacity:1;transform:translate(0,-50%)}
-.rail-foot{align-items:center;gap:14px}
-aside .user{position:relative;padding:0;background:none}
-aside .user .lbl b{color:#fff;font-size:13px}aside .user .lbl small{color:#B9BDC4;font-size:11px}
-.avatar{width:44px;height:44px;background:#fff;color:var(--fg);font:700 14px var(--f-display);box-shadow:0 0 0 3px rgba(255,255,255,.12)}
-.logout button{position:relative;width:44px;height:44px;padding:0;border-radius:50%;display:grid;place-items:center;border:0;background:transparent;color:var(--rail-fg)}
-.logout button:hover{background:rgba(255,255,255,.08);color:#fff}
-.logout svg{width:19px;height:19px}
+aside{width:240px;padding:30px 0 24px 18px;gap:30px;background:var(--rail);overflow:visible;z-index:20}
+.brand{padding:0 18px 0 0;text-align:center}
+.brand b{font:800 26px/1 var(--f-display);color:#fff;letter-spacing:-.03em}
+.brand b span{color:var(--lime)}
+.brand small{display:block;margin-top:9px;font:600 10px/1 var(--f-body);letter-spacing:.24em;text-transform:uppercase;color:var(--rail-fg);opacity:1}
+aside nav{position:relative;gap:6px;overflow:visible}
+aside nav a{position:relative;z-index:1;display:flex;align-items:center;gap:14px;height:52px;margin:0;padding:0 18px;border-radius:26px 0 0 26px;color:var(--rail-fg);font-weight:600;white-space:nowrap}
+aside nav a:hover{background:rgba(255,255,255,.06);color:var(--rail-hi)}
+aside nav svg{width:20px;height:20px;flex:none}
+/* pestaña activa: una pieza aparte (.tab) que se une con el fondo y se desliza al cambiar de sección */
+aside nav .tab{position:absolute;left:0;right:0;top:calc(var(--i)*58px);height:52px;border-radius:26px 0 0 26px;background:var(--bg);pointer-events:none;view-transition-name:nav-tab}
+aside nav .tab::before,aside nav .tab::after{content:"";position:absolute;right:0;width:24px;height:24px}
+aside nav .tab::before{top:-24px;background:radial-gradient(circle at 0 0,transparent 23.5px,var(--bg) 24px)}
+aside nav .tab::after{bottom:-24px;background:radial-gradient(circle at 0 100%,transparent 23.5px,var(--bg) 24px)}
+aside nav a.active,aside nav a.active:hover{background:transparent;color:var(--fg);box-shadow:none}
+aside nav a.active svg{color:var(--fg)}
+aside nav .count{margin:0 0 0 auto;min-width:22px;padding:4px 7px;font:700 11px/1 var(--f-body);text-align:center;background:var(--orange);color:#fff;border-radius:999px}
+.rail-foot{gap:12px;padding-right:18px}
+aside .user{display:flex;align-items:center;gap:10px;padding:10px;border-radius:16px;background:rgba(255,255,255,.05)}
+aside .user b{color:#fff;font-size:14px}aside .user small{color:var(--rail-fg);font-size:12px}
+.avatar{width:38px;height:38px;background:var(--lime);color:var(--fg);font:700 13px var(--f-display)}
+.logout button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:transparent;color:var(--rail-fg);font-weight:600}
+.logout button:hover{background:rgba(255,255,255,.06);color:#fff;border-color:rgba(255,255,255,.25)}
+.logout svg{width:17px;height:17px}
 
 /* ---------- área de trabajo ---------- */
-.content{margin-left:88px;padding:28px 32px 40px}
+.content{margin-left:240px;padding:28px 32px 40px}
 .eyebrow{font:500 13px/1.2 var(--f-body);letter-spacing:0;text-transform:none;color:var(--muted)}
 .content h1{font:800 30px/1.15 var(--f-display);letter-spacing:-.03em;margin:6px 0 0}
 .panel,.dpanel{background:var(--surface);border:0;border-radius:var(--r);box-shadow:var(--shadow)}
@@ -79,7 +76,9 @@ footer{color:var(--muted)}
 .kpi.t-ok .kpi-sub{color:#3E4A12}
 
 /* ---------- paneles ---------- */
-.grid-2{align-items:start}
+.calm-ico{background:var(--lime);color:var(--fg)}
+.later li{border-radius:16px}
+.later em{color:var(--fg);background:var(--lime);padding:3px 10px;border-radius:999px;font-size:12px}
 .dpanel{padding:22px}
 .dpanel h2{font:700 17px/1.3 var(--f-display)}
 .link{color:var(--fg);font-weight:700;font-size:13px;background:var(--sunken);padding:7px 14px;border-radius:999px}
@@ -155,6 +154,38 @@ button:hover{background:#2A2C30}
 .add-expiry[open] form:before{color:var(--fg)}
 .exchange-badge{background:var(--warn-soft);color:#8A4B00}
 
+.report{border:0;box-shadow:var(--shadow)}
+.report-brand span{color:var(--orange)}
+.report-kpis div{border-radius:16px}
+.report-filters .ghost{border-radius:999px;padding:0 20px}
+.report-filters .ghost:hover{background:var(--lime);border-color:var(--lime)}
+
+.member{border:0;border-top:0;box-shadow:var(--shadow)}
+.member.t-crit .member-top .avatar{background:var(--orange);color:#fff}.member.t-warn .member-top .avatar{background:var(--peach)}.member.t-ok .member-top .avatar{background:var(--lime)}
+.member .avatar{width:42px;height:42px;font-size:14px;box-shadow:none}
+.area-pill{background:var(--fg);color:#fff}
+.member-stats div{border-radius:16px}
+.member-stats .t-warn b{color:#C46A00}
+.member-actions>a{border-radius:999px}
+.member-actions>a:hover{background:var(--lime)}
+.member-actions .inline-delete button{border-radius:999px}
+.viewing{background:var(--fg);color:#fff;border-radius:999px;padding:10px 12px 10px 20px}
+.viewing a{color:var(--fg);background:var(--lime);padding:6px 14px;border-radius:999px}
+.unassigned{background:var(--peach);border-radius:var(--r)}
+.unassigned a{background:var(--fg);color:#fff;padding:8px 14px;border-radius:999px}
+.search select{border-radius:999px}
+
+.alert-list li{border-radius:16px}
+.alert-list .done{background:var(--fg)}
+.alert-person .avatar{width:42px;height:42px;background:var(--lime);color:var(--fg);box-shadow:none}
+.alert-popup .kpi-ico{background:var(--peach);color:var(--fg)}
+.popup-actions .ghost{border-radius:999px}
+aside a.user:hover,aside a.user.current{background:rgba(255,255,255,.1)}
+.exchange-done{color:#4C7A00}
+
+.products .dates-chip{background:var(--lime)}
+.products .group.open .group-head td:first-child{box-shadow:inset 3px 0 0 var(--fg)}
+
 /* ---------- inicio de sesión ---------- */
 .auth{background:radial-gradient(40% 50% at 15% 20%,rgba(214,243,91,.35),transparent 70%),radial-gradient(40% 50% at 85% 80%,rgba(255,106,44,.35),transparent 70%),var(--rail)}
 .login-card{border-radius:28px;box-shadow:0 30px 80px rgba(0,0,0,.45)}
@@ -165,18 +196,28 @@ button:hover{background:#2A2C30}
 /* ---------- pantallas medianas y móviles ---------- */
 @media(max-width:900px){
  aside{position:sticky;top:0;width:auto;flex-direction:row;align-items:center;gap:6px;padding:10px 12px;overflow-x:auto;overflow-y:hidden}
- .brand b{width:40px;height:40px;font-size:14px}
+ .brand{padding:0 6px 0 0}.brand b{font-size:18px}.brand small{display:none}
  aside nav{width:auto;flex-direction:row;gap:2px}
  aside nav a,aside nav a.active{width:40px;height:40px;margin:0;padding:0;justify-content:center;align-self:center;border-radius:50%}
- aside nav a.active{background:#fff}
- aside nav a.active::before,aside nav a.active::after{display:none}
- aside nav .count,aside nav a.active .count{left:26px;top:0;border-color:var(--rail)}
+ aside nav a.active{background:transparent}
+ aside nav .tab{top:0;left:calc(var(--i)*42px);right:auto;width:40px;height:40px;border-radius:50%;background:#fff}
+ aside nav .tab::before,aside nav .tab::after{display:none}
+ aside nav .count{position:absolute;left:24px;top:0;min-width:18px;padding:3px 5px;font-size:10px;border:2px solid var(--rail)}
+ .rail-foot{padding:0}aside .user{padding:0;background:none}.logout button{width:38px;height:38px;padding:0;border:0}
  .rail-foot{display:flex;flex-direction:row;margin:0 0 0 auto;gap:2px}
- .logout{display:block}.logout button{width:38px;height:38px}
+ .logout{display:block}
  .avatar{width:38px;height:38px;font-size:12px}
  /* en móvil los nombres quedan solo para lectores de pantalla */
  aside .lbl{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;opacity:1}
  .content{margin:0;padding:20px 16px 32px}
 }
-@media(max-width:520px){.kpi{padding:16px}.kpi-val{font-size:30px}.kpi::before{width:110px;height:100px}}
+@media(max-width:520px){aside .brand{display:none}.kpi{padding:16px}.kpi-val{font-size:30px}.kpi::before{width:110px;height:100px}}
 @media(prefers-reduced-motion:reduce){.kpi:hover,.action:hover{transform:none}}
+
+/* ---------- cambio de página suave (Chrome y Edge) ---------- */
+@view-transition{navigation:auto}
+aside{view-transition-name:sidebar}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.2s}
+::view-transition-old(sidebar),::view-transition-new(sidebar){animation-duration:.2s}
+::view-transition-group(nav-tab){animation-duration:.34s;animation-timing-function:cubic-bezier(.22,.8,.24,1)}
+@media(prefers-reduced-motion:reduce){@view-transition{navigation:none}}

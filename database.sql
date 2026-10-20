@@ -4,8 +4,10 @@ USE control_vencimientos_nuevo;
 CREATE TABLE usuarios (
  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
  usuario VARCHAR(50) NOT NULL UNIQUE,
+ nombre VARCHAR(100) NULL,
  clave VARCHAR(255) NOT NULL,
  rol ENUM('admin','empleado') NOT NULL DEFAULT 'empleado',
+ area VARCHAR(80) NULL,
  activo TINYINT(1) NOT NULL DEFAULT 1,
  creado TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
@@ -20,11 +22,14 @@ CREATE TABLE productos (
  cantidad INT UNSIGNED NOT NULL DEFAULT 0,
  tiene_cambio TINYINT(1) NOT NULL DEFAULT 0,
  fecha_cambio DATE NULL,
+ cambio_reportado DATETIME NULL,
  producto_origen_id INT UNSIGNED NULL,
+ usuario_id INT UNSIGNED NULL,
  vencimiento DATE NOT NULL,
  creado TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
  actualizado TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
- INDEX (producto), INDEX (vencimiento)
+ INDEX (producto), INDEX (vencimiento), INDEX (usuario_id),
+ FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
 CREATE TABLE historial (
