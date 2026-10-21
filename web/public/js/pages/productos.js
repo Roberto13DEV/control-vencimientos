@@ -1,12 +1,11 @@
 // Productos: registrar, ver agrupados por producto (con sus fechas debajo), editar, agregar vencimientos y eliminar
-import { db, e, paint, onSubmit, flash, reload, audit, displayName, today, daysBetween, dmy, DIAS_PROXIMO, params, ownerParam, byOwner, viewingBanner } from '../core.js';
+import { db, e, paint, onSubmit, flash, reload, audit, displayName, today, daysBetween, dmy, DIAS_PROXIMO, params, ownerParam, byOwner } from '../core.js';
 
 export default async function render(ctx, signal) {
   // Si se cambia de sección mientras carga, este dibujo se cancela
   const page = (html) => { if (signal.aborted) throw new DOMException('Cancelado', 'AbortError'); paint(html); };
   const onDoc = (type, fn) => document.addEventListener(type, fn, { signal });
   const { perfil: me, admin } = ctx;
-  const filtered = await viewingBanner(ctx);
   const q = (params.get('q') || '').trim();
 
   let query = byOwner(ctx, db.from('productos').select('*, perfiles(usuario,nombre,area)'));
@@ -19,6 +18,7 @@ export default async function render(ctx, signal) {
     admin ? db.from('perfiles').select('id,usuario,nombre,area').eq('activo', true) : Promise.resolve({ data: [] }),
   ]);
   team.sort((a, b) => displayName(a).localeCompare(displayName(b)));
+  const filtered = admin && ownerParam() ? team.find((t) => t.id === ownerParam()) || null : null;
 
   // Un producto con varias fechas de vencimiento se muestra una sola vez y sus fechas se despliegan debajo
   const day = today();

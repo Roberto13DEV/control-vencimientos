@@ -91,7 +91,7 @@ function alertPopup(admin, found) {
   const people = new Set([...found.cambio, ...found.vencido, ...found.pronto].map((r) => r.usuario_id)).size;
   const bell = '<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>';
   document.body.insertAdjacentHTML('beforeend', `<dialog class="alert-popup"><span class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${bell}</svg></span><h2>${admin ? 'Hay alertas pendientes' : 'Tienes alertas pendientes'}</h2>
-   <ul>${change ? `<li class="t-warn"><b>${change}</b> ${change === 1 ? 'producto para pedir cambio al proveedor' : 'productos para pedir cambio al proveedor'}</li>` : ''}${soon ? `<li class="t-crit"><b>${soon}</b> ${soon === 1 ? 'producto vence' : 'productos vencen'} en ${DIAS_CRITICO} días o menos</li>` : ''}${expired ? `<li class="t-crit"><b>${expired}</b> ${expired === 1 ? 'producto vencido' : 'productos vencidos'}</li>` : ''}</ul>
+   <ul>${change ? `<li class="t-warn"><b>${change}</b> ${change === 1 ? 'producto para pedir cambio al proveedor' : 'productos para pedir cambio al proveedor'}</li>` : ''}${soon ? `<li class="t-crit"><b>${soon}</b> ${soon === 1 ? 'producto vence pronto' : 'productos vencen pronto'}</li>` : ''}${expired ? `<li class="t-crit"><b>${expired}</b> ${expired === 1 ? 'producto vencido' : 'productos vencidos'}</li>` : ''}</ul>
    ${admin ? `<p>En ${people} ${people === 1 ? 'usuario' : 'usuarios'}. Revisa quién tiene cada producto.</p>` : ''}
    <form method="dialog" class="popup-actions"><a class="btn" href="/alertas">Ver alertas</a><button class="ghost">Más tarde</button></form></dialog>`);
   document.querySelector('dialog.alert-popup').showModal();

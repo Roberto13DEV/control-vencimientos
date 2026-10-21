@@ -1,11 +1,10 @@
 // Reportes: vencimientos de un mes (todos, por vencer o vencidos), de una persona o de todas, con descarga en PDF
-import { db, e, paint, displayName, today, daysBetween, dmy, params, ownerParam, byOwner, viewingBanner, DIAS_PROXIMO, DIAS_CRITICO } from '../core.js';
+import { db, e, paint, displayName, today, daysBetween, dmy, params, ownerParam, byOwner, DIAS_PROXIMO, DIAS_CRITICO } from '../core.js';
 
 export default async function render(ctx, signal) {
   // Si se cambia de sección mientras carga, este dibujo se cancela
   const page = (html) => { if (signal.aborted) throw new DOMException('Cancelado', 'AbortError'); paint(html); };
   const { perfil: me, admin } = ctx;
-  await viewingBanner(ctx);
   const day = today();
   const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
   const types = { todos: 'Todos los del mes', por_vencer: 'Por vencer', vencidos: 'Vencidos' };

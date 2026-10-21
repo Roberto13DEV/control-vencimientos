@@ -40,7 +40,7 @@ export default async function render(ctx, signal) {
         <div class="when"><b>${late === 0 ? 'Avisar hoy' : 'Atrasado ' + days(late)}</b><small>Aviso programado: ${short(r.fecha_cambio)}</small><small>Vence el ${short(r.vencimiento)} · en ${days(daysBetween(day, r.vencimiento))}</small></div>
         <div><button class="done" type="button" data-reported="${r.id}">Ya lo reporté</button></div></li>`;
      }).join('')}</ul>` : ''}
-     ${coming.length ? `<h3 class="alert-title t-crit">Vencen pronto · ${DIAS_CRITICO} días o menos</h3><ul class="alert-list">${coming.map((r) => {
+     ${coming.length ? `<h3 class="alert-title t-crit">Vencen pronto</h3><ul class="alert-list">${coming.map((r) => {
        const left = daysBetween(day, r.vencimiento);
        const find = new URLSearchParams({ q: r.producto, ...(admin && r.usuario_id ? { usuario: r.usuario_id } : {}) });
        return `<li class="t-crit"><div class="prod"><b>${e(r.producto)}</b><small>${e([r.categoria, r.cantidad + ' unidades'].filter(Boolean).join(' · '))}</small></div>

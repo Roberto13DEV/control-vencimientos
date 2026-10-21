@@ -9,7 +9,7 @@ export default async function render(ctx, signal) {
   await viewingBanner(ctx);
   const day = today();
   const [{ data: rows = [] }, { data: changes = [] }] = await Promise.all([
-    byOwner(ctx, db.from('productos').select('*')).order('vencimiento').order('producto'),
+    byOwner(ctx, db.from('productos').select('*, perfiles(usuario,nombre)')).order('vencimiento').order('producto'),
     alertFilters(byOwner(ctx, db.from('productos').select('id,producto,vencimiento')), 'cambio').order('vencimiento'),
   ]);
   const items = rows.map((r) => ({ ...r, dias: daysBetween(day, r.vencimiento), grupo: r.producto_origen_id ?? r.id }));
@@ -30,7 +30,9 @@ export default async function render(ctx, signal) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
   const headline = week || expired.length ? `${plural(week, 'producto vence', 'productos vencen')} esta semana y ${plural(expired.length, 'ya venció', 'ya vencieron')}.` : 'Nada vence esta semana. Todo en orden.';
-  const lineOf = (r) => [r.lote ? `Lote ${r.lote}` : '', r.codigo, r.categoria].filter(Boolean).join(' · ');
+  // Debajo del nombre: lote, código, categoría y, para el administrador, de quién es ("Tú" si es suyo)
+  const ownerOf = (r) => (admin ? (r.usuario_id === me.id ? 'Tú' : displayName(r.perfiles || {})) : '');
+  const lineOf = (r) => [r.lote ? `Lote ${r.lote}` : '', r.codigo, r.categoria, ownerOf(r)].filter(Boolean).join(' · ');
 
   // Si el administrador está revisando a una persona, los enlaces a Productos y Alertas la conservan
   const keep = admin && ownerParam() ? `?usuario=${ownerParam()}` : '';
