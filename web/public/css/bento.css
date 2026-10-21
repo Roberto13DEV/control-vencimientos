@@ -234,6 +234,8 @@ aside{view-transition-name:sidebar}
 /* ---------- celulares: sin zoom automático ---------- */
 /* El iPhone acerca la pantalla al tocar un campo con letra menor de 16 px (y en modo app el zoom se quedaba pegado) */
 @media(max-width:900px){input,select,textarea{font-size:16px!important}}
+/* pantalla fija: sin zoom por doble toque y sin que el iPhone agrande el texto solo */
+html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 /* pantallas muy pequeñas (iPhone SE y similares): tarjetas de Usuarios más compactas */
 @media(max-width:380px){
  .member{padding:14px}

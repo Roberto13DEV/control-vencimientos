@@ -194,6 +194,9 @@ export function enhance(root = document) {
   root.querySelectorAll('form').forEach(syncExchange);
 }
 
+// Pantalla fija como una app: el iPhone ignora "user-scalable=no", así que el pellizco para hacer zoom se bloquea aquí
+['gesturestart', 'gesturechange', 'gestureend'].forEach((type) => document.addEventListener(type, (event) => event.preventDefault(), { passive: false }));
+document.addEventListener('touchmove', (event) => { if (event.scale !== undefined && event.scale !== 1) event.preventDefault(); }, { passive: false });
 document.addEventListener('change', (event) => { if (event.target.name === 'tiene_cambio') syncExchange(event.target.form); });
 // Filtros que se aplican solos al cambiarlos (data-auto); "limpiar-busqueda" además borra el texto buscado
 document.addEventListener('change', (event) => {
