@@ -89,7 +89,11 @@ export async function logout(perfil) {
 export async function start({ adminOnly = false } = {}) {
   const { data: { session } } = await db.auth.getSession();
   if (!session) { go('/login'); return null; }
-  const { data: perfil } = await db.from('perfiles').select('*').eq('id', session.user.id).maybeSingle();
+  // El perfil y las alertas se piden al mismo tiempo (cada consulta tarda unos 0.3 s)
+  const [{ data: perfil }, found] = await Promise.all([
+    db.from('perfiles').select('*').eq('id', session.user.id).maybeSingle(),
+    countAlerts(),
+  ]);
   if (!perfil || !perfil.activo) {
     await db.auth.signOut();
     sessionStorage.clear();
@@ -97,7 +101,6 @@ export async function start({ adminOnly = false } = {}) {
     go('/login');
     return null;
   }
-  const found = await countAlerts();
   const alerts = found.cambio.length + found.vencido.length;
   sessionStorage.setItem('perfil', JSON.stringify(perfil));
   sessionStorage.setItem('alertas', String(alerts));
@@ -126,7 +129,14 @@ export async function viewingBanner(ctx) {
   return person;
 }
 
-export const page = (html) => { const root = document.getElementById('page'); root.innerHTML = html; enhance(root); };
+// Dibuja la página y la guarda para mostrarla al instante la próxima vez que se abra (luego se actualiza sola)
+export const page = (html) => {
+  const root = document.getElementById('page');
+  root.innerHTML = html;
+  root.classList.remove('stale');
+  enhance(root);
+  try { sessionStorage.setItem(`page:${location.pathname}${location.search}`, html); } catch { /* sin espacio: no pasa nada */ }
+};
 export const setError = (text) => { document.querySelectorAll('details.add-expiry[open]').forEach((d) => d.removeAttribute('open')); document.getElementById('flash').innerHTML = `<div class="alert error">${e(text)}</div>`; window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
 // ---------- Comportamientos de formularios (los mismos que la versión PHP) ----------

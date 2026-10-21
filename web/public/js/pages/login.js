@@ -21,6 +21,7 @@ async function signIn(usuario, clave) {
   const { data: perfil } = await db.from('perfiles').select('*').eq('id', data.user.id).maybeSingle();
   if (!perfil || !perfil.activo) { await db.auth.signOut(); throw new Error('Tu usuario fue desactivado.'); }
   await audit(perfil, 'Inicio de sesión');
+  sessionStorage.clear(); // sin páginas guardadas de otra sesión
   sessionStorage.setItem('perfil', JSON.stringify(perfil));
   sessionStorage.setItem('alert_popup', '1'); // la ventana de alertas se muestra una vez al entrar
   go('/');
