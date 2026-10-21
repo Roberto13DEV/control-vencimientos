@@ -37,7 +37,7 @@ export default async function render(ctx, signal) {
        <label>Área<input name="area" maxlength="80" value="${e(u.area)}"></label>
        <label>Contraseña nueva<input type="password" name="clave" minlength="10" autocomplete="new-password"></label>
        <p class="hint">Deja la contraseña vacía si no quieres cambiarla. Mínimo 10 caracteres.</p><button>Guardar</button></form></details>
-      ${u.id === me.id ? '' : `<div class="inline-delete"><button type="button" class="toggle${u.activo ? ' delete' : ''}" data-id="${u.id}" data-active="${u.activo ? 1 : 0}">${u.activo ? 'Desactivar' : 'Activar'}</button></div>`}
+      ${u.id === me.id ? '' : `<div class="inline-delete"><button type="button" class="toggle${u.activo ? ' delete' : ''}" data-id="${u.id}" data-active="${u.activo ? 1 : 0}">${u.activo ? 'Desactivar' : 'Activar'}</button><button type="button" class="remove-user delete" data-id="${u.id}" data-name="${e(displayName(u))}" data-products="${s.productos}">Eliminar</button></div>`}
      </div></article>`;
   };
 
@@ -61,6 +61,24 @@ export default async function render(ctx, signal) {
     const result = await api('usuarios', { accion: 'editar', id: form.dataset.id, ...data });
     flash('ok', result.mensaje);
     reload();
+  }));
+  // Eliminar usuario: pide confirmación; sus productos pasan a quien lo elimina
+  document.querySelectorAll('.remove-user').forEach((button) => button.addEventListener('click', async () => {
+    const products = +button.dataset.products;
+    const message = `¿Eliminar a ${button.dataset.name}?
+
+Ya no podrá entrar y esto no se puede deshacer.${products ? `
+Sus ${products} ${products === 1 ? 'producto pasará' : 'productos pasarán'} a tu nombre.` : ''}`;
+    if (!confirm(message)) return;
+    button.disabled = true;
+    try {
+      const result = await api('usuarios', { accion: 'eliminar', id: button.dataset.id });
+      flash('ok', result.mensaje);
+      reload();
+    } catch (error) {
+      button.disabled = false;
+      alert(error.message);
+    }
   }));
   document.querySelectorAll('.toggle').forEach((button) => button.addEventListener('click', async () => {
     if (button.dataset.active === '1' && !confirm('¿Desactivar este usuario? Ya no podrá ingresar.')) return;

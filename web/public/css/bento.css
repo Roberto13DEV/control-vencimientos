@@ -169,6 +169,8 @@ button:hover{background:#2A2C30}
 .member-actions>a{border-radius:999px}
 .member-actions>a:hover{background:var(--lime)}
 .member-actions .inline-delete button{border-radius:999px}
+.member-actions .inline-delete{display:flex;gap:6px}
+.member-actions .remove-user{background:var(--crit);color:#fff}.member-actions .remove-user:hover{background:#d9440f}
 .viewing{background:var(--fg);color:#fff;border-radius:999px;padding:10px 12px 10px 20px}
 .viewing a{color:var(--fg);background:var(--lime);padding:6px 14px;border-radius:999px}
 .unassigned{background:var(--peach);border-radius:var(--r)}

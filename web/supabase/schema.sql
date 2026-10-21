@@ -91,11 +91,11 @@ end $$;
 create trigger productos_antes_de_actualizar before update on public.productos
 for each row execute function public.productos_antes_de_actualizar();
 
--- Un empleado no puede registrar productos a nombre de otra persona
+-- Un empleado no puede registrar productos a nombre de otra persona (el servidor con la clave secreta sí, p. ej. al eliminar un usuario)
 create function public.productos_dueno() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  if not es_admin() then
+  if not es_admin() and coalesce(auth.role(), '') <> 'service_role' then
     if tg_op = 'INSERT' then new.usuario_id := auth.uid();
     elsif new.usuario_id is distinct from old.usuario_id then new.usuario_id := old.usuario_id;
     end if;

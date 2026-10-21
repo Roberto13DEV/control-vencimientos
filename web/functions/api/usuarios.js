@@ -58,5 +58,17 @@ export async function onRequestPost({ request, env }) {
     return json({ ok: true, mensaje: activo ? 'Usuario activado.' : 'Usuario desactivado.' });
   }
 
+  // Eliminar: sus productos pasan al administrador que elimina (no se pierde inventario); el historial se conserva
+  if (body.accion === 'eliminar') {
+    if (target.id === me.id) return json({ error: 'No puedes eliminar tu propio usuario.' }, 400);
+    const moved = await s.rest(`productos?usuario_id=eq.${id}`, { method: 'PATCH', body: JSON.stringify({ usuario_id: me.id }) });
+    if (!moved.ok) return json({ error: 'No se pudieron pasar sus productos a tu nombre; no se eliminó nada.' }, 400);
+    const removed = await s.auth(`admin/users/${id}`, { method: 'DELETE' });
+    if (!removed.ok) return json({ error: 'No se pudo eliminar el usuario.' }, 400);
+    const count = Array.isArray(moved.body) ? moved.body.length : 0;
+    await audit(env, me, `Usuario eliminado: ${target.usuario}${count ? ` · ${count} productos pasaron a ${me.usuario}` : ''}`);
+    return json({ ok: true, mensaje: count ? `Usuario eliminado. Sus ${count} productos ahora están a tu nombre.` : 'Usuario eliminado.' });
+  }
+
   return json({ error: 'Acción no válida.' }, 400);
 }
