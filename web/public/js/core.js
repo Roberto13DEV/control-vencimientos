@@ -27,7 +27,19 @@ export function showFlash() {
   if (!raw) return;
   sessionStorage.removeItem('flash');
   const [type, text] = JSON.parse(raw);
-  document.getElementById('flash')?.insertAdjacentHTML('afterbegin', `<div class="alert ${type === 'ok' ? 'ok' : 'error'}">${e(text)}</div>`);
+  notify(type, text);
+}
+
+// Aviso arriba de la página: el de éxito se va solo a los 3 s y el de error a los 6 s (o al tocarlo)
+export function notify(type, text) {
+  const box = document.getElementById('flash');
+  if (!box) return;
+  box.querySelectorAll('.alert').forEach((old) => old.remove());
+  box.insertAdjacentHTML('afterbegin', `<div class="alert ${type === 'ok' ? 'ok' : 'error'}" role="status" title="Toca para cerrar">${e(text)}</div>`);
+  const alert = box.firstElementChild;
+  const close = () => { alert.classList.add('hiding'); setTimeout(() => alert.remove(), 300); };
+  alert.addEventListener('click', close);
+  setTimeout(close, type === 'ok' ? 3000 : 6000);
 }
 export const go = (url) => { location.href = url; };
 // En modo app, "recargar" vuelve a dibujar solo el contenido de la sección actual
@@ -138,7 +150,7 @@ export const paint = (html) => {
   enhance(root);
   try { sessionStorage.setItem(`page:${location.pathname}${location.search}`, html); } catch { /* sin espacio: no pasa nada */ }
 };
-export const setError = (text) => { document.querySelectorAll('details.add-expiry[open]').forEach((d) => d.removeAttribute('open')); document.getElementById('flash').innerHTML = `<div class="alert error">${e(text)}</div>`; window.scrollTo({ top: 0, behavior: 'smooth' }); };
+export const setError = (text) => { document.querySelectorAll('details.add-expiry[open]').forEach((d) => d.removeAttribute('open')); notify('error', text); window.scrollTo({ top: 0, behavior: 'smooth' }); };
 
 export const page = (html) => paint(html);
 
