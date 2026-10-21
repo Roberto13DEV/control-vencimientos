@@ -196,7 +196,10 @@ export function enhance(root = document) {
 
 // Pantalla fija como una app: el iPhone ignora "user-scalable=no", así que el pellizco para hacer zoom se bloquea aquí
 ['gesturestart', 'gesturechange', 'gestureend'].forEach((type) => document.addEventListener(type, (event) => event.preventDefault(), { passive: false }));
-document.addEventListener('touchmove', (event) => { if (event.scale !== undefined && event.scale !== 1) event.preventDefault(); }, { passive: false });
+// Cualquier toque con dos dedos o más se cancela: así no hay pellizco en ningún navegador (incluido el de WhatsApp)
+['touchstart', 'touchmove'].forEach((type) => document.addEventListener(type, (event) => {
+  if (event.touches.length > 1 || (event.scale !== undefined && event.scale !== 1)) event.preventDefault();
+}, { passive: false }));
 // En la computadora: sin zoom con Ctrl + rueda (o pellizco en el touchpad) ni con Ctrl + / Ctrl -. Ctrl+0 sí funciona para volver al 100 %
 document.addEventListener('wheel', (event) => { if (event.ctrlKey || event.metaKey) event.preventDefault(); }, { passive: false });
 document.addEventListener('keydown', (event) => {
