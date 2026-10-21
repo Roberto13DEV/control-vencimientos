@@ -234,3 +234,10 @@ aside{view-transition-name:sidebar}
 /* ---------- celulares: sin zoom automático ---------- */
 /* El iPhone acerca la pantalla al tocar un campo con letra menor de 16 px (y en modo app el zoom se quedaba pegado) */
 @media(max-width:900px){input,select,textarea{font-size:16px!important}}
+/* pantallas muy pequeñas (iPhone SE y similares): tarjetas de Usuarios más compactas */
+@media(max-width:380px){
+ .member{padding:14px}
+ .member-top{flex-wrap:wrap}.member-top .area-pill{margin-left:0}
+ .member-stats{grid-template-columns:repeat(2,1fr)}
+ .member-actions .inline-delete{margin-left:0;width:100%;justify-content:flex-end}
+}
