@@ -1,8 +1,9 @@
 // Alertas: cambios que toca pedir al proveedor y productos vencidos. El administrador las ve agrupadas por persona
-import { db, e, start, page, audit, flash, reload, displayName, initials, today, daysBetween, alertFilters, byOwner, viewingBanner, ownerParam } from '../core.js';
+import { db, e, paint, audit, flash, reload, displayName, initials, today, daysBetween, alertFilters, byOwner, viewingBanner, ownerParam } from '../core.js';
 
-const ctx = await start();
-if (ctx) {
+export default async function render(ctx, signal) {
+  // Si se cambia de sección mientras carga, este dibujo se cancela
+  const page = (html) => { if (signal.aborted) throw new DOMException('Cancelado', 'AbortError'); paint(html); };
   const { perfil: me, admin } = ctx;
   await viewingBanner(ctx);
   const day = today();

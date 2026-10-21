@@ -1,8 +1,10 @@
 // Resumen: indicadores, calendario de 30 días, próximos a vencer (con tarjeta de detalle), estado del inventario y vencidos
-import { db, e, start, page, audit, flash, reload, displayName, today, addDays, daysBetween, alertFilters, ownerParam, byOwner, viewingBanner, DIAS_PROXIMO, DIAS_CRITICO } from '../core.js';
+import { db, e, paint, audit, flash, reload, displayName, today, addDays, daysBetween, alertFilters, ownerParam, byOwner, viewingBanner, DIAS_PROXIMO, DIAS_CRITICO } from '../core.js';
 
-const ctx = await start();
-if (ctx) {
+export default async function render(ctx, signal) {
+  // Si se cambia de sección mientras carga, este dibujo se cancela
+  const page = (html) => { if (signal.aborted) throw new DOMException('Cancelado', 'AbortError'); paint(html); };
+  const onDoc = (type, fn) => document.addEventListener(type, fn, { signal });
   const { perfil: me, admin, alerts } = ctx;
   await viewingBanner(ctx);
   const day = today();
@@ -129,13 +131,13 @@ if (ctx) {
     list.forEach((row, n) => row.classList.toggle('sel', n === i));
     document.querySelectorAll('.detail[id^="detalle-"]').forEach((card, n) => { card.hidden = n !== i; });
   };
-  document.addEventListener('click', (event) => {
+  onDoc('click', (event) => {
     const row = event.target.closest?.('tr[data-detail]');
     const nextButton = event.target.closest?.('.detail .next');
     if (row) pick(+row.dataset.detail);
     if (nextButton) pick(+nextButton.dataset.next);
   });
-  document.addEventListener('keydown', (event) => {
+  onDoc('keydown', (event) => {
     if ((event.key === 'Enter' || event.key === ' ') && event.target.matches?.('tr[data-detail]')) { event.preventDefault(); pick(+event.target.dataset.detail); }
   });
   // Dar de baja un vencido (solo administrador)

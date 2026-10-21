@@ -1,8 +1,9 @@
 // Reportes: vencimientos de un mes (todos, por vencer o vencidos), de una persona o de todas, con descarga en PDF
-import { db, e, start, page, displayName, today, daysBetween, dmy, params, ownerParam, byOwner, viewingBanner, DIAS_PROXIMO, DIAS_CRITICO } from '../core.js';
+import { db, e, paint, displayName, today, daysBetween, dmy, params, ownerParam, byOwner, viewingBanner, DIAS_PROXIMO, DIAS_CRITICO } from '../core.js';
 
-const ctx = await start();
-if (ctx) {
+export default async function render(ctx, signal) {
+  // Si se cambia de sección mientras carga, este dibujo se cancela
+  const page = (html) => { if (signal.aborted) throw new DOMException('Cancelado', 'AbortError'); paint(html); };
   const { perfil: me, admin } = ctx;
   await viewingBanner(ctx);
   const day = today();
@@ -45,10 +46,10 @@ if (ctx) {
   const lineOf = (r) => [r.categoria, showOwner ? r.responsable || 'Sin responsable' : ''].filter(Boolean).join(' · ');
   const emptyText = `No hay productos ${tipo === 'vencidos' ? 'vencidos' : tipo === 'por_vencer' ? 'por vencer' : 'que venzan'} en ${monthName}.`;
 
-  const personSelect = admin ? `<label>Persona<select name="usuario" onchange="this.form.submit()"><option value="">Todas las personas</option>${team.map((t) => `<option value="${t.id}"${ownerParam() === t.id ? ' selected' : ''}>${e(displayName(t) + (t.area ? ' · ' + t.area : ''))}</option>`).join('')}</select></label>` : '';
+  const personSelect = admin ? `<label>Persona<select name="usuario" data-auto><option value="">Todas las personas</option>${team.map((t) => `<option value="${t.id}"${ownerParam() === t.id ? ' selected' : ''}>${e(displayName(t) + (t.area ? ' · ' + t.area : ''))}</option>`).join('')}</select></label>` : '';
   page(`<section class="panel report-form"><form autocomplete="off" class="report-filters">
-     <label>Mes<input type="month" name="mes" onchange="this.form.submit()" value="${mes}" required></label>${personSelect}
-     <label>Mostrar<select name="tipo" onchange="this.form.submit()">${Object.entries(types).map(([key, text]) => `<option value="${key}"${key === tipo ? ' selected' : ''}>${text}</option>`).join('')}</select></label>
+     <label>Mes<input type="month" name="mes" data-auto value="${mes}" required></label>${personSelect}
+     <label>Mostrar<select name="tipo" data-auto>${Object.entries(types).map(([key, text]) => `<option value="${key}"${key === tipo ? ' selected' : ''}>${text}</option>`).join('')}</select></label>
      <button>Ver reporte</button><button type="button" class="ghost" id="pdf">Descargar PDF</button></form></section>
    <article class="report">
     <header class="report-head"><div><b class="report-brand">VENCE<span>+</span></b><h2>${e(title)}</h2><p class="report-who">${e(colaborador)}</p><p>${e(subtitle)}</p></div><div class="report-meta"><span>Generado el ${generated}</span><span>Por ${e(displayName(me))}</span></div></header>

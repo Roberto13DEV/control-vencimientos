@@ -1,8 +1,9 @@
 // Historial: solo los ingresos al sistema (quién entró, qué día y a qué hora)
-import { db, e, start, page, displayName } from '../core.js';
+import { db, e, paint, displayName } from '../core.js';
 
-const ctx = await start({ adminOnly: true });
-if (ctx) {
+export default async function render(ctx, signal) {
+  // Si se cambia de sección mientras carga, este dibujo se cancela
+  const page = (html) => { if (signal.aborted) throw new DOMException('Cancelado', 'AbortError'); paint(html); };
   const { data: rows = [] } = await db.from('historial')
     .select('fecha,usuario,perfiles(usuario,nombre,area)')
     .eq('accion', 'Inicio de sesión').order('id', { ascending: false }).limit(500);

@@ -22,15 +22,16 @@ export const dmy = (iso) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso
 
 // Avisos de una página a la siguiente (como los mensajes "Producto guardado")
 export const flash = (type, text) => sessionStorage.setItem('flash', JSON.stringify([type, text]));
-function showFlash() {
+export function showFlash() {
   const raw = sessionStorage.getItem('flash');
   if (!raw) return;
   sessionStorage.removeItem('flash');
   const [type, text] = JSON.parse(raw);
-  document.getElementById('flash').innerHTML = `<div class="alert ${type === 'ok' ? 'ok' : 'error'}">${e(text)}</div>`;
+  document.getElementById('flash')?.insertAdjacentHTML('afterbegin', `<div class="alert ${type === 'ok' ? 'ok' : 'error'}">${e(text)}</div>`);
 }
 export const go = (url) => { location.href = url; };
-export const reload = () => location.reload();
+// En modo app, "recargar" vuelve a dibujar solo el contenido de la sección actual
+export const reload = () => (window.router ? window.router.refresh() : location.reload());
 
 export async function audit(perfil, accion) {
   await db.from('historial').insert({ usuario_id: perfil.id, usuario: perfil.usuario, accion });
@@ -56,7 +57,7 @@ export function alertFilters(query, kind) {
     ? query.eq('tiene_cambio', true).lte('fecha_cambio', day).gte('vencimiento', day).is('cambio_reportado', null)
     : query.lt('vencimiento', day);
 }
-async function countAlerts() {
+export async function countAlerts() {
   const [cambio, vencido] = await Promise.all(['cambio', 'vencido'].map((kind) =>
     alertFilters(db.from('productos').select('usuario_id'), kind)));
   return { cambio: cambio.data || [], vencido: vencido.data || [] };
@@ -117,7 +118,7 @@ export async function start({ adminOnly = false } = {}) {
 }
 
 // Persona elegida por el administrador (?usuario=ID). Los empleados ya ven solo lo suyo gracias a los permisos de Supabase
-export const params = new URLSearchParams(location.search);
+export const params = { get: (key) => new URLSearchParams(location.search).get(key) };
 export const ownerParam = () => params.get('usuario') || '';
 export const byOwner = (ctx, query) => (ctx.admin && ownerParam() ? query.eq('usuario_id', ownerParam()) : query);
 export async function viewingBanner(ctx) {
@@ -130,7 +131,7 @@ export async function viewingBanner(ctx) {
 }
 
 // Dibuja la página y la guarda para mostrarla al instante la próxima vez que se abra (luego se actualiza sola)
-export const page = (html) => {
+export const paint = (html) => {
   const root = document.getElementById('page');
   root.innerHTML = html;
   root.classList.remove('stale');
@@ -138,6 +139,8 @@ export const page = (html) => {
   try { sessionStorage.setItem(`page:${location.pathname}${location.search}`, html); } catch { /* sin espacio: no pasa nada */ }
 };
 export const setError = (text) => { document.querySelectorAll('details.add-expiry[open]').forEach((d) => d.removeAttribute('open')); document.getElementById('flash').innerHTML = `<div class="alert error">${e(text)}</div>`; window.scrollTo({ top: 0, behavior: 'smooth' }); };
+
+export const page = (html) => paint(html);
 
 // ---------- Comportamientos de formularios (los mismos que la versión PHP) ----------
 
@@ -180,6 +183,13 @@ export function enhance(root = document) {
 }
 
 document.addEventListener('change', (event) => { if (event.target.name === 'tiene_cambio') syncExchange(event.target.form); });
+// Filtros que se aplican solos al cambiarlos (data-auto); "limpiar-busqueda" además borra el texto buscado
+document.addEventListener('change', (event) => {
+  const field = event.target.closest?.('[data-auto]');
+  if (!field) return;
+  if (field.dataset.auto === 'limpiar-busqueda' && field.form.q) field.form.q.value = '';
+  field.form.requestSubmit();
+});
 // Ventanas emergentes (details.add-expiry): se cierran al hacer clic fuera o con Esc
 document.addEventListener('click', (event) => {
   const open = event.target.closest?.('details.add-expiry[open]');

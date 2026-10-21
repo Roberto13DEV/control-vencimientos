@@ -1,8 +1,9 @@
 // Mi perfil: cada persona ve sus datos y cambia su nombre visible
-import { db, e, start, page, displayName, initials, onSubmit, flash, reload } from '../core.js';
+import { db, e, paint, displayName, initials, onSubmit, flash, reload } from '../core.js';
 
-const ctx = await start();
-if (ctx) {
+export default async function render(ctx, signal) {
+  // Si se cambia de sección mientras carga, este dibujo se cancela
+  const page = (html) => { if (signal.aborted) throw new DOMException('Cancelado', 'AbortError'); paint(html); };
   const { perfil, admin } = ctx;
   const { data: rows = [] } = await db.from('productos').select('cantidad').eq('usuario_id', perfil.id);
   const units = rows.reduce((sum, r) => sum + r.cantidad, 0);

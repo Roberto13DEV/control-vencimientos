@@ -214,6 +214,12 @@ aside a.user:hover,aside a.user.current{background:rgba(255,255,255,.1)}
 @media(max-width:520px){aside .brand{display:none}.kpi{padding:16px}.kpi-val{font-size:30px}.kpi::before{width:110px;height:100px}}
 @media(prefers-reduced-motion:reduce){.kpi:hover,.action:hover{transform:none}}
 
+/* ---------- modo app: la pestaña se desliza y el contenido aparece con un fundido corto ---------- */
+aside nav .tab{transition:top .35s cubic-bezier(.22,.8,.24,1),left .35s cubic-bezier(.22,.8,.24,1)}
+@keyframes page-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#page.enter{animation:page-in .22s ease-out}
+@media(prefers-reduced-motion:reduce){aside nav .tab{transition:none}#page.enter{animation:none}}
+
 /* ---------- cambio de página suave (Chrome y Edge) ---------- */
 @view-transition{navigation:auto}
 aside{view-transition-name:sidebar}

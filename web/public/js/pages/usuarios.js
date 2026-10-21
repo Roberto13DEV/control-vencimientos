@@ -1,8 +1,9 @@
 // Usuarios (solo administrador): crear, editar y desactivar; una tarjeta por persona con sus números
-import { db, e, start, page, api, displayName, initials, onSubmit, flash, reload, today, addDays, DIAS_PROXIMO } from '../core.js';
+import { db, e, paint, api, displayName, initials, onSubmit, flash, reload, today, addDays, DIAS_PROXIMO } from '../core.js';
 
-const ctx = await start({ adminOnly: true });
-if (ctx) {
+export default async function render(ctx, signal) {
+  // Si se cambia de sección mientras carga, este dibujo se cancela
+  const page = (html) => { if (signal.aborted) throw new DOMException('Cancelado', 'AbortError'); paint(html); };
   const { perfil: me } = ctx;
   const [{ data: people = [] }, { data: products = [] }] = await Promise.all([
     db.from('perfiles').select('*'),

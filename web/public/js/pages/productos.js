@@ -1,8 +1,10 @@
 // Productos: registrar, ver agrupados por producto (con sus fechas debajo), editar, agregar vencimientos y eliminar
-import { db, e, start, page, onSubmit, flash, reload, audit, displayName, today, daysBetween, dmy, DIAS_PROXIMO, params, ownerParam, byOwner, viewingBanner } from '../core.js';
+import { db, e, paint, onSubmit, flash, reload, audit, displayName, today, daysBetween, dmy, DIAS_PROXIMO, params, ownerParam, byOwner, viewingBanner } from '../core.js';
 
-const ctx = await start();
-if (ctx) {
+export default async function render(ctx, signal) {
+  // Si se cambia de sección mientras carga, este dibujo se cancela
+  const page = (html) => { if (signal.aborted) throw new DOMException('Cancelado', 'AbortError'); paint(html); };
+  const onDoc = (type, fn) => document.addEventListener(type, fn, { signal });
   const { perfil: me, admin } = ctx;
   const filtered = await viewingBanner(ctx);
   const q = (params.get('q') || '').trim();
@@ -68,7 +70,7 @@ if (ctx) {
     </tbody>`;
   });
 
-  const personSelect = admin ? `<select name="usuario" aria-label="Persona" onchange="this.form.q.value='';this.form.submit()"><option value="">Todas las personas</option>${team.map((t) => `<option value="${t.id}"${ownerParam() === t.id ? ' selected' : ''}>${e(displayName(t) + (t.area ? ' · ' + t.area : ''))}</option>`).join('')}</select>` : '';
+  const personSelect = admin ? `<select name="usuario" aria-label="Persona" data-auto="limpiar-busqueda"><option value="">Todas las personas</option>${team.map((t) => `<option value="${t.id}"${ownerParam() === t.id ? ' selected' : ''}>${e(displayName(t) + (t.area ? ' · ' + t.area : ''))}</option>`).join('')}</select>` : '';
   page(`<section class="panel"><h2>Nuevo producto</h2><form autocomplete="off" class="grid-form product-form" id="new-product">
      <label class="wide">Producto<input name="producto" required></label><label>Categoría<input name="categoria"></label><label>Proveedor<input name="proveedor"></label>
      <label>Cantidad<input type="number" name="cantidad" min="0" value="0" required></label><label>Vencimiento<input type="date" name="vencimiento" required></label>
@@ -131,7 +133,7 @@ if (ctx) {
   }));
 
   // Clic en un producto con varias fechas para desplegarlas o recogerlas
-  document.addEventListener('click', (event) => {
+  onDoc('click', (event) => {
     const toggle = event.target.closest?.('.group-toggle');
     if (!toggle) return;
     const group = document.getElementById(toggle.getAttribute('aria-controls'));

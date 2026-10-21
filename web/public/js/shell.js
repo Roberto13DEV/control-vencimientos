@@ -33,6 +33,28 @@
     aside.innerHTML = html;
   };
 
+  // Al cambiar de sección dentro de la app: marca la nueva sección y mueve la pestaña (sin volver a dibujar la barra)
+  window.setActiveNav = function (page) {
+    var nav = document.querySelector('aside nav');
+    if (!nav) return;
+    var links = Array.prototype.slice.call(nav.querySelectorAll('a'));
+    var index = -1;
+    links.forEach(function (a, i) {
+      var key = a.getAttribute('href') === '/' ? 'index' : a.getAttribute('href').slice(1);
+      var active = key === page;
+      a.classList.toggle('active', active);
+      if (active) { a.setAttribute('aria-current', 'page'); index = i; } else a.removeAttribute('aria-current');
+    });
+    var tab = nav.querySelector('.tab');
+    if (index < 0) { if (tab) tab.remove(); }
+    else {
+      if (!tab) { tab = document.createElement('span'); tab.className = 'tab'; tab.setAttribute('aria-hidden', 'true'); nav.insertBefore(tab, nav.firstChild); }
+      tab.style.setProperty('--i', index);
+    }
+    var user = document.querySelector('aside .user');
+    if (user) user.classList.toggle('current', page === 'perfil');
+  };
+
   try {
     var cached = JSON.parse(sessionStorage.getItem('perfil') || 'null');
     if (cached) window.renderShell(cached, +sessionStorage.getItem('alertas') || 0);
