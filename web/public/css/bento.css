@@ -230,3 +230,7 @@ aside{view-transition-name:sidebar}
 ::view-transition-old(sidebar),::view-transition-new(sidebar){animation-duration:.2s}
 ::view-transition-group(nav-tab){animation-duration:.34s;animation-timing-function:cubic-bezier(.22,.8,.24,1)}
 @media(prefers-reduced-motion:reduce){@view-transition{navigation:none}}
+
+/* ---------- celulares: sin zoom automático ---------- */
+/* El iPhone acerca la pantalla al tocar un campo con letra menor de 16 px (y en modo app el zoom se quedaba pegado) */
+@media(max-width:900px){input,select,textarea{font-size:16px!important}}
