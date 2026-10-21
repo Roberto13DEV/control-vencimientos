@@ -63,11 +63,13 @@ export async function api(path, body) {
 }
 
 // Alertas: el día de pedir el cambio llegó (y aún no se reportó) o el producto ya venció
-// "pronto": vence hoy o en los próximos DIAS_CRITICO días (los que se marcan como Crítico)
+// "pronto": vence hoy o en los próximos DIAS_CRITICO días (Crítico), salvo que ya se haya revisado o reportado
+// "reportado": ya se avisó al proveedor y se espera que se lo lleve (no cuenta como alerta)
 export function alertFilters(query, kind) {
   const day = today();
   if (kind === 'cambio') return query.eq('tiene_cambio', true).lte('fecha_cambio', day).gte('vencimiento', day).is('cambio_reportado', null);
-  if (kind === 'pronto') return query.gte('vencimiento', day).lte('vencimiento', addDays(day, DIAS_CRITICO));
+  if (kind === 'pronto') return query.gte('vencimiento', day).lte('vencimiento', addDays(day, DIAS_CRITICO)).is('alerta_revisada', null).is('cambio_reportado', null);
+  if (kind === 'reportado') return query.eq('tiene_cambio', true).not('cambio_reportado', 'is', null).gte('vencimiento', day);
   return query.lt('vencimiento', day);
 }
 // Un producto que ya está en "pedir cambio" no se repite en "vencen pronto"

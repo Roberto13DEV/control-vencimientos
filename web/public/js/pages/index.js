@@ -115,7 +115,7 @@ export default async function render(ctx, signal) {
    <div class="grid-2">
     <section class="dpanel"><div class="dpanel-head"><div><h2>Productos vencidos</h2><p>Retíralos de la venta y regístralos como merma.</p></div><a class="link crit" href="${productsUrl()}">Ver todos →</a></div>
      <div class="tbl-wrap"><table><thead><tr><th>Producto</th><th>Venció</th><th>Hace</th><th class="num">Unid.</th><th></th></tr></thead><tbody>
-     ${!expired.length ? '<tr><td colspan="5" class="empty">No hay productos vencidos</td></tr>' : [...expired].reverse().slice(0, 6).map((r) => `<tr class="t-crit"><td class="prod"><b>${e(r.producto)}</b><small>${e(lineOf(r))}</small></td><td class="mono">${short(r.vencimiento)}</td><td><span class="days">${-r.dias} d</span></td><td class="num mono">${r.cantidad}</td><td class="num">${admin ? `<button class="row-act" type="button" data-baja="${r.id}">Dar de baja</button>` : ''}</td></tr>`).join('')}
+     ${!expired.length ? '<tr><td colspan="5" class="empty">No hay productos vencidos</td></tr>' : [...expired].reverse().slice(0, 6).map((r) => `<tr class="t-crit"><td class="prod"><b>${e(r.producto)}</b><small>${e(lineOf(r))}</small></td><td class="mono">${short(r.vencimiento)}</td><td><span class="days">${-r.dias} d</span></td><td class="num mono">${r.cantidad}</td><td class="num"><button class="row-act" type="button" data-baja="${r.id}">Dar de baja</button></td></tr>`).join('')}
      </tbody></table></div></section>
     <section class="dpanel"><div class="dpanel-head"><h2>Acciones rápidas</h2></div><div class="actions">
      <a class="action t-ok" href="${productsUrl()}"><span class="kpi-ico">${svg('plus', 2.2)}</span><span><b>Nuevo producto</b><small>Registrar vencimiento</small></span></a>

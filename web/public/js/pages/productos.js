@@ -40,7 +40,7 @@ export default async function render(ctx, signal) {
     <label>Cantidad<input type="number" name="cantidad" min="0" value="${r.cantidad}" required></label><label>Vencimiento<input type="date" name="vencimiento" value="${e(r.vencimiento)}" required></label>${exchangeFields(r, true)}<button>Guardar cambios</button></form></details>`;
   const add = (r) => `<details class="add-expiry"><summary>+ Vencimiento</summary><form autocomplete="off" data-action="agregar" data-id="${r.id}" data-title="Agregar otro vencimiento a ${e(r.producto)}">
     <label>Cantidad<input type="number" name="cantidad" min="0" value="0" required></label><label>Nueva fecha<input type="date" name="vencimiento" required></label>${exchangeFields(r, false)}<button>Agregar</button></form></details>`;
-  const remove = (r) => (admin ? `<div class="inline-delete"><button type="button" class="delete" data-delete="${r.id}">Eliminar</button></div>` : '');
+  const remove = (r) => `<div class="inline-delete"><button type="button" class="delete" data-delete="${r.id}">Eliminar</button></div>`;
 
   let body = '';
   if (!groups.size) {

@@ -26,6 +26,7 @@ create table public.productos (
   tiene_cambio boolean not null default false,
   fecha_cambio date,
   cambio_reportado timestamptz,
+  alerta_revisada timestamptz,
   producto_origen_id bigint,
   usuario_id uuid default auth.uid() references public.perfiles(id) on delete set null,
   vencimiento date not null,
@@ -83,6 +84,9 @@ begin
   if new.fecha_cambio is distinct from old.fecha_cambio or new.vencimiento <> old.vencimiento then
     new.cambio_reportado := null;
   end if;
+  if new.vencimiento <> old.vencimiento then
+    new.alerta_revisada := null;
+  end if;
   if not new.tiene_cambio then
     new.fecha_cambio := null;
   end if;
@@ -115,7 +119,7 @@ alter table public.historial enable row level security;
 create policy perfiles_ver on public.perfiles for select to authenticated
   using (id = auth.uid() or es_admin());
 
--- Productos: el empleado ve y edita solo los suyos; el administrador todo; solo el administrador elimina
+-- Productos: el empleado ve, edita y da de baja solo los suyos; el administrador todo
 create policy productos_ver on public.productos for select to authenticated
   using (esta_activo() and (es_admin() or usuario_id = auth.uid()));
 create policy productos_crear on public.productos for insert to authenticated
@@ -124,7 +128,7 @@ create policy productos_editar on public.productos for update to authenticated
   using (esta_activo() and (es_admin() or usuario_id = auth.uid()))
   with check (es_admin() or usuario_id = auth.uid());
 create policy productos_eliminar on public.productos for delete to authenticated
-  using (es_admin());
+  using (esta_activo() and (es_admin() or usuario_id = auth.uid()));
 
 -- Historial: cada uno registra sus propios movimientos; solo el administrador los ve
 create policy historial_crear on public.historial for insert to authenticated
