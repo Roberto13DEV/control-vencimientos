@@ -20,7 +20,7 @@ aside nav a{position:relative;z-index:1;display:flex;align-items:center;gap:14px
 aside nav a:hover{background:rgba(255,255,255,.06);color:var(--rail-hi)}
 aside nav svg{width:20px;height:20px;flex:none}
 /* pestaña activa: una pieza aparte (.tab) que se une con el fondo y se desliza al cambiar de sección */
-aside nav .tab{position:absolute;left:0;right:0;top:calc(var(--i)*58px);height:52px;border-radius:26px 0 0 26px;background:var(--bg);pointer-events:none;view-transition-name:nav-tab}
+aside nav .tab{position:absolute;left:0;right:0;top:0;transform:translateY(calc(var(--i)*58px));height:52px;border-radius:26px 0 0 26px;background:var(--bg);pointer-events:none;view-transition-name:nav-tab}
 aside nav .tab::before,aside nav .tab::after{content:"";position:absolute;right:0;width:24px;height:24px}
 aside nav .tab::before{top:-24px;background:radial-gradient(circle at 0 0,transparent 23.5px,var(--bg) 24px)}
 aside nav .tab::after{bottom:-24px;background:radial-gradient(circle at 0 100%,transparent 23.5px,var(--bg) 24px)}
@@ -200,7 +200,7 @@ aside a.user:hover,aside a.user.current{background:rgba(255,255,255,.1)}
  aside nav{width:auto;flex-direction:row;gap:2px}
  aside nav a,aside nav a.active{width:40px;height:40px;margin:0;padding:0;justify-content:center;align-self:center;border-radius:50%}
  aside nav a.active{background:transparent}
- aside nav .tab{top:0;left:calc(var(--i)*42px);right:auto;width:40px;height:40px;border-radius:50%;background:#fff}
+ aside nav .tab{top:0;left:0;transform:translateX(calc(var(--i)*42px));right:auto;width:40px;height:40px;border-radius:50%;background:#fff}
  aside nav .tab::before,aside nav .tab::after{display:none}
  aside nav .count{position:absolute;left:24px;top:0;min-width:18px;padding:3px 5px;font-size:10px;border:2px solid var(--rail)}
  .rail-foot{padding:0}aside .user{padding:0;background:none}.logout button{width:38px;height:38px;padding:0;border:0}
@@ -215,10 +215,11 @@ aside a.user:hover,aside a.user.current{background:rgba(255,255,255,.1)}
 @media(prefers-reduced-motion:reduce){.kpi:hover,.action:hover{transform:none}}
 
 /* ---------- modo app: la pestaña se desliza y el contenido aparece con un fundido corto ---------- */
-aside nav .tab{transition:top .35s cubic-bezier(.22,.8,.24,1),left .35s cubic-bezier(.22,.8,.24,1)}
+/* el círculo/pestaña se mueve con transform: los celulares lo animan con la tarjeta gráfica y se ve suave */
+aside nav .tab{transition:transform .35s cubic-bezier(.22,.8,.24,1);will-change:transform}
 @keyframes page-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 #page.enter{animation:page-in .22s ease-out}
-@media(prefers-reduced-motion:reduce){aside nav .tab{transition:none}#page.enter{animation:none}}
+@media(prefers-reduced-motion:reduce){aside nav .tab{transition-duration:.2s}#page.enter{animation:none}}
 
 /* ---------- cambio de página suave (Chrome y Edge) ---------- */
 @view-transition{navigation:auto}
