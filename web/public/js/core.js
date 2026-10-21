@@ -205,7 +205,19 @@ export function enhance(root = document) {
   // Sin sugerencias del navegador
   root.querySelectorAll('form[autocomplete="off"] input:not([type="password"]):not([type="hidden"])').forEach((input) => input.setAttribute('autocomplete', 'off'));
   root.querySelectorAll('form').forEach(syncExchange);
+  root.querySelectorAll('input[type="date"], input[type="month"]').forEach(markEmptyDate);
 }
+
+// El iPhone deja en blanco una fecha sin elegir: la etiqueta guarda la guía (dd/mm/aaaa) y el CSS la muestra encima
+function markEmptyDate(input) {
+  const label = input.closest('label');
+  if (!label) return;
+  label.dataset.hint = input.type === 'month' ? 'mm/aaaa' : 'dd/mm/aaaa';
+  label.classList.toggle('date-empty', !input.value);
+}
+['input', 'change'].forEach((type) => document.addEventListener(type, (event) => {
+  if (event.target.matches?.('input[type="date"], input[type="month"]')) markEmptyDate(event.target);
+}));
 
 // Pantalla fija como una app: el iPhone ignora "user-scalable=no", así que el pellizco para hacer zoom se bloquea aquí
 ['gesturestart', 'gesturechange', 'gestureend'].forEach((type) => document.addEventListener(type, (event) => event.preventDefault(), { passive: false }));

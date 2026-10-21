@@ -29,7 +29,13 @@ export default async function render(ctx, signal) {
 
   const cols = admin ? 7 : 6;
   const meta = (r) => [r.codigo, r.categoria, r.lote ? `Lote ${r.lote}` : ''].filter(Boolean).join(' · ');
-  const badge = (d) => `<b class="badge ${d < 0 ? 'bad' : d <= DIAS_PROXIMO ? 'warn' : 'good'}">${d < 0 ? 'Vencido' : d <= DIAS_PROXIMO ? 'Próximo' : 'Vigente'}</b>`;
+  // Si ya se reportó al proveedor o se revisó en Alertas, se marca en vez de "Próximo" (vencido sigue diciendo Vencido)
+  const badge = (r) => {
+    const d = r.dias;
+    if (d >= 0 && r.tiene_cambio && r.cambio_reportado) return '<b class="badge checked">Reportado ✓</b>';
+    if (d >= 0 && r.alerta_revisada) return '<b class="badge checked">Revisado ✓</b>';
+    return `<b class="badge ${d < 0 ? 'bad' : d <= DIAS_PROXIMO ? 'warn' : 'good'}">${d < 0 ? 'Vencido' : d <= DIAS_PROXIMO ? 'Próximo' : 'Vigente'}</b>`;
+  };
   const exchange = (r) => !r.tiene_cambio ? 'No'
     : !r.fecha_cambio ? 'Sí<small class="missing">Falta elegir el día de aviso</small>'
     : `Sí<small>Avisar el ${dmy(r.fecha_cambio)}${r.cambio_reportado ? ' · reportado' : ''}</small>`;
@@ -51,12 +57,12 @@ export default async function render(ctx, signal) {
   groups.forEach((dates, gid) => {
     const first = dates[0];
     if (dates.length === 1) {
-      body += `<tbody><tr><td><strong>${e(first.producto)}</strong><small>${e(meta(first))}</small></td><td>${first.cantidad}</td><td>${dmy(first.vencimiento)}</td><td>${exchange(first)}</td><td>${badge(first.dias)}</td>${owner(first)}<td>${edit(first)} ${add(first)}${remove(first)}</td></tr></tbody>`;
+      body += `<tbody><tr><td><strong>${e(first.producto)}</strong><small>${e(meta(first))}</small></td><td>${first.cantidad}</td><td>${dmy(first.vencimiento)}</td><td>${exchange(first)}</td><td>${badge(first)}</td>${owner(first)}<td><div class="row-actions">${edit(first)}${add(first)}${remove(first)}</div></td></tr></tbody>`;
       return;
     }
     // Fila resumen: unidades totales, la fecha que vence primero y el estado de la fecha más urgente
     const total = dates.reduce((sum, r) => sum + r.cantidad, 0);
-    const soonest = Math.min(...dates.map((r) => r.dias));
+    const soonest = dates.reduce((a, b) => (b.dias < a.dias ? b : a));
     const notices = dates.map((r) => r.fecha_cambio).filter(Boolean).sort();
     const withExchange = dates.filter((r) => r.tiene_cambio).length;
     const missing = dates.filter((r) => r.tiene_cambio && !r.fecha_cambio).length;
@@ -65,8 +71,8 @@ export default async function render(ctx, signal) {
      <tr class="group-head"><td><button type="button" class="group-toggle" aria-expanded="${open}" aria-controls="grupo-${gid}"><span class="chev" aria-hidden="true"></span><span><strong>${e(first.producto)}</strong><small>${e([first.codigo, first.categoria].filter(Boolean).join(' · '))}</small></span><span class="dates-chip">${dates.length} fechas</span></button></td>
       <td><b>${total}</b><small>en total</small></td><td>${dmy(first.vencimiento)}<small>vence primero</small></td>
       <td>${!withExchange ? 'No' : missing ? `Sí<small class="missing">Falta el día en ${missing} ${missing === 1 ? 'fecha' : 'fechas'}</small>` : `Sí<small>Próximo aviso: ${dmy(notices[0])}</small>`}</td>
-      <td>${badge(soonest)}</td>${owner(first)}<td>${add(first)}</td></tr>
-     ${dates.map((r, i) => `<tr class="group-row"><td><span class="date-mark">Fecha ${i + 1}</span>${r.lote ? `<small>Lote ${e(r.lote)}</small>` : ''}</td><td>${r.cantidad}</td><td>${dmy(r.vencimiento)}</td><td>${exchange(r)}</td><td>${badge(r.dias)}</td>${admin ? '<td></td>' : ''}<td>${edit(r)}${remove(r)}</td></tr>`).join('')}
+      <td>${badge(soonest)}</td>${owner(first)}<td><div class="row-actions">${add(first)}</div></td></tr>
+     ${dates.map((r, i) => `<tr class="group-row"><td><span class="date-mark">Fecha ${i + 1}</span>${r.lote ? `<small>Lote ${e(r.lote)}</small>` : ''}</td><td>${r.cantidad}</td><td>${dmy(r.vencimiento)}</td><td>${exchange(r)}</td><td>${badge(r)}</td>${admin ? '<td></td>' : ''}<td><div class="row-actions">${edit(r)}${remove(r)}</div></td></tr>`).join('')}
     </tbody>`;
   });
 
