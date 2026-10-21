@@ -97,11 +97,15 @@ function alertPopup(admin, found) {
   document.querySelector('dialog.alert-popup').showModal();
 }
 
+// Cerrar sesión siempre funciona: aunque Supabase no responda, la sesión se borra de este navegador
 export async function logout(perfil) {
-  if (perfil) await audit(perfil, 'Cierre de sesión');
-  await db.auth.signOut();
+  const button = document.getElementById('logout');
+  if (button) button.disabled = true;
+  try { if (perfil) await audit(perfil, 'Cierre de sesión'); } catch { /* sin conexión: igual se cierra */ }
+  try { await db.auth.signOut({ scope: 'local' }); } catch { /* se limpia abajo */ }
+  try { Object.keys(localStorage).filter((key) => key.startsWith('sb-')).forEach((key) => localStorage.removeItem(key)); } catch { /* sin acceso */ }
   sessionStorage.clear();
-  go('/login');
+  location.replace('/login');
 }
 
 // Arranque de cada página: exige sesión, carga el perfil y dibuja la barra lateral
@@ -124,7 +128,8 @@ export async function start({ adminOnly = false } = {}) {
   sessionStorage.setItem('perfil', JSON.stringify(perfil));
   sessionStorage.setItem('alertas', String(alerts));
   window.renderShell(perfil, alerts);
-  document.getElementById('logout')?.addEventListener('click', () => logout(perfil));
+  // El botón funciona aunque la barra lateral se vuelva a dibujar
+  document.addEventListener('click', (event) => { if (event.target.closest?.('#logout')) logout(perfil); });
   showFlash();
   const admin = perfil.rol === 'admin';
   alertPopup(admin, found);
