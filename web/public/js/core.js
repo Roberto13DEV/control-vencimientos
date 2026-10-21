@@ -197,6 +197,11 @@ export function enhance(root = document) {
 // Pantalla fija como una app: el iPhone ignora "user-scalable=no", así que el pellizco para hacer zoom se bloquea aquí
 ['gesturestart', 'gesturechange', 'gestureend'].forEach((type) => document.addEventListener(type, (event) => event.preventDefault(), { passive: false }));
 document.addEventListener('touchmove', (event) => { if (event.scale !== undefined && event.scale !== 1) event.preventDefault(); }, { passive: false });
+// En la computadora: sin zoom con Ctrl + rueda (o pellizco en el touchpad) ni con Ctrl + / Ctrl -. Ctrl+0 sí funciona para volver al 100 %
+document.addEventListener('wheel', (event) => { if (event.ctrlKey || event.metaKey) event.preventDefault(); }, { passive: false });
+document.addEventListener('keydown', (event) => {
+  if ((event.ctrlKey || event.metaKey) && ['+', '-', '=', '_', 'Add', 'Subtract'].includes(event.key)) event.preventDefault();
+});
 document.addEventListener('change', (event) => { if (event.target.name === 'tiene_cambio') syncExchange(event.target.form); });
 // Filtros que se aplican solos al cambiarlos (data-auto); "limpiar-busqueda" además borra el texto buscado
 document.addEventListener('change', (event) => {
