@@ -1,6 +1,6 @@
 // Modo app: la sesión, la barra lateral y la conexión a Supabase se cargan una sola vez.
 // Al hacer clic en un enlace interno solo cambia el contenido (sin recargar la página), con la pestaña deslizándose.
-import { start, showFlash, countAlerts, e } from './core.js';
+import { start, showFlash, countAlerts, alertTotal, e } from './core.js';
 
 const routes = {
   index: ['Resumen', './pages/index.js'],
@@ -62,7 +62,7 @@ if (ctx) {
   // Número de alertas en el menú (se actualiza en cada cambio de sección)
   async function updateBadge() {
     const found = await countAlerts();
-    const total = found.cambio.length + found.vencido.length;
+    const total = alertTotal(found);
     sessionStorage.setItem('alertas', String(total));
     const link = document.querySelector('aside nav a[href="/alertas"]');
     if (!link) return;

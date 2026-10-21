@@ -63,16 +63,21 @@ export async function api(path, body) {
 }
 
 // Alertas: el día de pedir el cambio llegó (y aún no se reportó) o el producto ya venció
+// "pronto": vence hoy o en los próximos DIAS_CRITICO días (los que se marcan como Crítico)
 export function alertFilters(query, kind) {
   const day = today();
-  return kind === 'cambio'
-    ? query.eq('tiene_cambio', true).lte('fecha_cambio', day).gte('vencimiento', day).is('cambio_reportado', null)
-    : query.lt('vencimiento', day);
+  if (kind === 'cambio') return query.eq('tiene_cambio', true).lte('fecha_cambio', day).gte('vencimiento', day).is('cambio_reportado', null);
+  if (kind === 'pronto') return query.gte('vencimiento', day).lte('vencimiento', addDays(day, DIAS_CRITICO));
+  return query.lt('vencimiento', day);
 }
+// Un producto que ya está en "pedir cambio" no se repite en "vencen pronto"
+export const withoutChanges = (soon, changes) => { const ids = new Set(changes.map((r) => r.id)); return soon.filter((r) => !ids.has(r.id)); };
+export const alertTotal = (found) => found.cambio.length + found.vencido.length + found.pronto.length;
 export async function countAlerts() {
-  const [cambio, vencido] = await Promise.all(['cambio', 'vencido'].map((kind) =>
-    alertFilters(db.from('productos').select('usuario_id'), kind)));
-  return { cambio: cambio.data || [], vencido: vencido.data || [] };
+  const [cambio, vencido, pronto] = await Promise.all(['cambio', 'vencido', 'pronto'].map((kind) =>
+    alertFilters(db.from('productos').select('id,usuario_id'), kind)));
+  const changes = cambio.data || [];
+  return { cambio: changes, vencido: vencido.data || [], pronto: withoutChanges(pronto.data || [], changes) };
 }
 
 // Ventana con las alertas pendientes: se muestra una sola vez, al entrar al sistema
@@ -81,11 +86,12 @@ function alertPopup(admin, found) {
   sessionStorage.removeItem('alert_popup');
   const change = found.cambio.length;
   const expired = found.vencido.length;
-  if (!change && !expired) return;
-  const people = new Set([...found.cambio, ...found.vencido].map((r) => r.usuario_id)).size;
+  const soon = found.pronto.length;
+  if (!change && !expired && !soon) return;
+  const people = new Set([...found.cambio, ...found.vencido, ...found.pronto].map((r) => r.usuario_id)).size;
   const bell = '<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>';
   document.body.insertAdjacentHTML('beforeend', `<dialog class="alert-popup"><span class="kpi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${bell}</svg></span><h2>${admin ? 'Hay alertas pendientes' : 'Tienes alertas pendientes'}</h2>
-   <ul>${change ? `<li class="t-warn"><b>${change}</b> ${change === 1 ? 'producto para pedir cambio al proveedor' : 'productos para pedir cambio al proveedor'}</li>` : ''}${expired ? `<li class="t-crit"><b>${expired}</b> ${expired === 1 ? 'producto vencido' : 'productos vencidos'}</li>` : ''}</ul>
+   <ul>${change ? `<li class="t-warn"><b>${change}</b> ${change === 1 ? 'producto para pedir cambio al proveedor' : 'productos para pedir cambio al proveedor'}</li>` : ''}${soon ? `<li class="t-crit"><b>${soon}</b> ${soon === 1 ? 'producto vence' : 'productos vencen'} en ${DIAS_CRITICO} días o menos</li>` : ''}${expired ? `<li class="t-crit"><b>${expired}</b> ${expired === 1 ? 'producto vencido' : 'productos vencidos'}</li>` : ''}</ul>
    ${admin ? `<p>En ${people} ${people === 1 ? 'usuario' : 'usuarios'}. Revisa quién tiene cada producto.</p>` : ''}
    <form method="dialog" class="popup-actions"><a class="btn" href="/alertas">Ver alertas</a><button class="ghost">Más tarde</button></form></dialog>`);
   document.querySelector('dialog.alert-popup').showModal();
@@ -114,7 +120,7 @@ export async function start({ adminOnly = false } = {}) {
     go('/login');
     return null;
   }
-  const alerts = found.cambio.length + found.vencido.length;
+  const alerts = alertTotal(found);
   sessionStorage.setItem('perfil', JSON.stringify(perfil));
   sessionStorage.setItem('alertas', String(alerts));
   window.renderShell(perfil, alerts);
@@ -138,7 +144,7 @@ export async function viewingBanner(ctx) {
   const { data: person } = await db.from('perfiles').select('*').eq('id', ownerParam()).maybeSingle();
   if (!person) return null;
   const here = location.pathname;
-  document.getElementById('flash').insertAdjacentHTML('beforeend', `<div class="viewing"><span>Viendo los productos de <b>${e(displayName(person))}</b>${person.area ? ' · ' + e(person.area) : ''}</span><a href="${e(here)}">Ver todos</a></div>`);
+  document.getElementById('flash').insertAdjacentHTML('beforeend', `<div class="viewing"><span>${person.id === ctx.perfil.id ? 'Viendo <b>tus</b> productos' : `Viendo los productos de <b>${e(displayName(person))}</b>${person.area ? ' · ' + e(person.area) : ''}`}</span><a href="${e(here)}">Ver todos</a></div>`);
   return person;
 }
 
