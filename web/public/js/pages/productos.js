@@ -40,12 +40,14 @@ export default async function render(ctx, signal) {
     : !r.fecha_cambio ? 'Sí<small class="missing">Falta elegir el día de aviso</small>'
     : `Sí<small>Avisar el ${dmy(r.fecha_cambio)}${r.cambio_reportado ? ' · reportado' : ''}</small>`;
   const owner = (r) => (admin ? `<td><b class="owner-name">${e(displayName(r.perfiles || {}))}</b><small>${e(r.perfiles?.area || 'Sin área')}</small></td>` : '');
-  const exchangeFields = (r, withDate) => `<label class="exchange-check"><input type="checkbox" name="tiene_cambio" value="1"${r.tiene_cambio ? ' checked' : ''}> Tiene cambio con proveedor</label><label class="exchange-date">¿Qué día te aviso para pedir el cambio?<input type="date" name="fecha_cambio" value="${withDate ? e(r.fecha_cambio) : ''}"></label>`;
+  // El calendario no deja elegir días pasados; al editar, la fecha que ya tenía se puede dejar igual
+  const minFor = (value) => (value && value < day ? value : day);
+  const exchangeFields = (r, withDate) => `<label class="exchange-check"><input type="checkbox" name="tiene_cambio" value="1"${r.tiene_cambio ? ' checked' : ''}> Tiene cambio con proveedor</label><label class="exchange-date">¿Qué día te aviso para pedir el cambio?<input type="date" name="fecha_cambio" min="${minFor(withDate ? r.fecha_cambio : '')}" value="${withDate ? e(r.fecha_cambio) : ''}"></label>`;
   const edit = (r) => `<details class="add-expiry"><summary>Editar</summary><form autocomplete="off" data-action="editar" data-id="${r.id}" data-group="${r.grupo}" data-title="Editar producto">
     <label>Producto<input name="producto" value="${e(r.producto)}" required></label><label>Categoría<input name="categoria" value="${e(r.categoria)}"></label><label>Proveedor<input name="proveedor" value="${e(r.proveedor)}"></label>
-    <label>Cantidad<input type="number" name="cantidad" min="0" value="${r.cantidad}" required></label><label>Vencimiento<input type="date" name="vencimiento" value="${e(r.vencimiento)}" required></label>${exchangeFields(r, true)}<button>Guardar cambios</button></form></details>`;
+    <label>Cantidad<input type="number" name="cantidad" min="0" value="${r.cantidad}" required></label><label>Vencimiento<input type="date" name="vencimiento" min="${minFor(r.vencimiento)}" value="${e(r.vencimiento)}" required></label>${exchangeFields(r, true)}<button>Guardar cambios</button></form></details>`;
   const add = (r) => `<details class="add-expiry"><summary>+ Vencimiento</summary><form autocomplete="off" data-action="agregar" data-id="${r.id}" data-title="Agregar otro vencimiento a ${e(r.producto)}">
-    <label>Cantidad<input type="number" name="cantidad" min="0" value="0" required></label><label>Nueva fecha<input type="date" name="vencimiento" required></label>${exchangeFields(r, false)}<button>Agregar</button></form></details>`;
+    <label>Cantidad<input type="number" name="cantidad" min="0" value="0" required></label><label>Nueva fecha<input type="date" name="vencimiento" min="${day}" required></label>${exchangeFields(r, false)}<button>Agregar</button></form></details>`;
   const remove = (r) => `<div class="inline-delete"><button type="button" class="delete" data-delete="${r.id}">Eliminar</button></div>`;
 
   let body = '';
@@ -79,18 +81,22 @@ export default async function render(ctx, signal) {
   const personSelect = admin ? `<select name="usuario" aria-label="Persona" data-auto="limpiar-busqueda"><option value="">Todas las personas</option>${team.map((t) => `<option value="${t.id}"${ownerParam() === t.id ? ' selected' : ''}>${e(displayName(t) + (t.area ? ' · ' + t.area : ''))}</option>`).join('')}</select>` : '';
   page(`<section class="panel"><h2>Nuevo producto</h2><form autocomplete="off" class="grid-form product-form" id="new-product">
      <label class="wide">Producto<input name="producto" required></label><label>Categoría<input name="categoria"></label><label>Proveedor<input name="proveedor"></label>
-     <label>Cantidad<input type="number" name="cantidad" min="0" value="0" required></label><label>Vencimiento<input type="date" name="vencimiento" required></label>
-     <label class="exchange-check"><input type="checkbox" name="tiene_cambio" value="1"> Tiene cambio con proveedor</label><label class="exchange-date">¿Qué día te aviso para pedir el cambio?<input type="date" name="fecha_cambio"></label><button>Guardar producto</button></form></section>
+     <label>Cantidad<input type="number" name="cantidad" min="0" value="0" required></label><label>Vencimiento<input type="date" name="vencimiento" min="${day}" required></label>
+     <label class="exchange-check"><input type="checkbox" name="tiene_cambio" value="1"> Tiene cambio con proveedor</label><label class="exchange-date">¿Qué día te aviso para pedir el cambio?<input type="date" name="fecha_cambio" min="${day}"></label><button>Guardar producto</button></form></section>
    <section class="panel"><div class="panel-head"><h2>Inventario y vencimientos</h2><form autocomplete="off" class="search"><input name="q" value="${e(q)}" placeholder="Buscar producto o categoría">${personSelect}<button>Buscar</button></form></div>
    <div class="table"><table class="products"><thead><tr><th>Producto</th><th>Cantidad</th><th>Vencimiento</th><th>Cambio</th><th>Estado</th>${admin ? '<th>Responsable</th>' : ''}<th>Acciones</th></tr></thead>${body}</table></div></section>`);
 
   // ---------- Guardar ----------
   const text = (value) => String(value ?? '').trim() || null;
-  // Si tiene cambio con proveedor, el día de aviso es obligatorio y no puede ser después del vencimiento
-  const exchangeData = (data) => {
+  // Ninguna fecha nueva puede ser de un día que ya pasó (al editar, se puede dejar la que ya tenía)
+  const notPast = (value, before, message) => { if (value && value < today() && value !== before) throw new Error(message); };
+  // Si tiene cambio con proveedor, el día de aviso es obligatorio, no puede haber pasado ni ser después del vencimiento
+  const exchangeData = (data, before = {}) => {
+    notPast(data.vencimiento, before.vencimiento, 'El vencimiento no puede ser una fecha que ya pasó.');
     const tiene = data.tiene_cambio === '1';
     if (!tiene) return { tiene_cambio: false, fecha_cambio: null };
     if (!data.fecha_cambio) throw new Error('Pon la fecha en que quieres que te avise para pedir el cambio.');
+    notPast(data.fecha_cambio, before.fecha_cambio, 'El día para pedir el cambio no puede ser una fecha que ya pasó.');
     if (data.fecha_cambio > data.vencimiento) throw new Error('La fecha para pedir el cambio no puede ser después del vencimiento.');
     return { tiene_cambio: true, fecha_cambio: data.fecha_cambio };
   };
@@ -110,7 +116,7 @@ export default async function render(ctx, signal) {
     if (!producto || !data.vencimiento) throw new Error('Completa nombre y una fecha válida.');
     const id = +form.dataset.id;
     const group = +form.dataset.group;
-    const cambio = exchangeData(data);
+    const cambio = exchangeData(data, rows.find((r) => r.id === id));
     // Nombre, categoría y proveedor valen para todas las fechas del producto; lo demás solo para esta fecha
     check(await db.from('productos').update({ producto, categoria: text(data.categoria), proveedor: text(data.proveedor) }).or(`id.eq.${group},producto_origen_id.eq.${group}`), 'No se pudo actualizar el producto.');
     check(await db.from('productos').update({ cantidad: Math.max(0, +data.cantidad || 0), vencimiento: data.vencimiento, ...cambio }).eq('id', id), 'No se pudo actualizar esta fecha.');
