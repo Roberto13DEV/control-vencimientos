@@ -23,7 +23,8 @@ export default async function render(ctx, signal) {
   // Un producto con varias fechas de vencimiento se muestra una sola vez y sus fechas se despliegan debajo
   const day = today();
   rows.forEach((r) => { r.grupo = r.producto_origen_id ?? r.id; r.dias = daysBetween(day, r.vencimiento); });
-  rows.sort((a, b) => a.producto.localeCompare(b.producto) || a.grupo - b.grupo || a.vencimiento.localeCompare(b.vencimiento));
+  // Ordenados por urgencia: primero lo que vence antes (cada producto se ubica por su fecha más próxima)
+  rows.sort((a, b) => a.vencimiento.localeCompare(b.vencimiento) || a.producto.localeCompare(b.producto) || a.id - b.id);
   const groups = new Map();
   rows.forEach((r) => { if (!groups.has(r.grupo)) groups.set(r.grupo, []); groups.get(r.grupo).push(r); });
 
